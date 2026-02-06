@@ -29,6 +29,11 @@ async function discover(req, res) {
     let events = [];
     let shouldPopulate = false;
 
+    // Check whether `payload` JSONB column exists before referencing it in SQL
+    const payloadCheck = await pgDb.query("SELECT column_name FROM information_schema.columns WHERE table_name='events' AND column_name='payload' LIMIT 1");
+    const hasPayload = payloadCheck.rowCount > 0;
+    const imageSelect = hasPayload ? "COALESCE(payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') as image," : "NULL as image,";
+
     if (lat !== null && lng !== null) {
       // Use PostGIS ST_DWithin for fast geospatial query
       console.log(`🔍 PostGIS: Searching for events within ${radius}km of (${lat}, ${lng})`);
@@ -40,7 +45,7 @@ async function discover(req, res) {
           venue_latitude as latitude, venue_longitude as longitude,
           event_url as url, source, category, ticket_url,
           -- Try to extract an image URL from payload if available
-          (CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='events' AND column_name='payload') THEN COALESCE(payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') ELSE NULL END) as image,
+          ${imageSelect}
           CASE WHEN geom IS NOT NULL THEN
             ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
           ELSE NULL END as distance_meters
@@ -66,7 +71,7 @@ async function discover(req, res) {
           CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) as location,
           venue_latitude as latitude, venue_longitude as longitude,
           event_url as url, source, category, ticket_url,
-          (CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='events' AND column_name='payload') THEN COALESCE(payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') ELSE NULL END) as image
+          ${imageSelect}
         FROM events
         WHERE venue_city ILIKE $1 OR venue_name ILIKE $1
         ORDER BY event_date ASC NULLS LAST
@@ -86,7 +91,7 @@ async function discover(req, res) {
           CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) as location,
           venue_latitude as latitude, venue_longitude as longitude,
           event_url as url, source, category, ticket_url,
-          (CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='events' AND column_name='payload') THEN COALESCE(payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') ELSE NULL END) as image
+          ${imageSelect}
         FROM events
         ORDER BY event_date ASC NULLS LAST
         LIMIT $1
