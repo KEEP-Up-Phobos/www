@@ -32,7 +32,8 @@ async function discover(req, res) {
     // Check whether `payload` JSONB column exists before referencing it in SQL
     const payloadCheck = await pgDb.query("SELECT column_name FROM information_schema.columns WHERE table_name='events' AND column_name='payload' LIMIT 1");
     const hasPayload = payloadCheck.rowCount > 0;
-    const imageSelect = hasPayload ? "COALESCE(payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') as image," : "NULL as image,";
+    // Prefer explicit image_url column if present, fallback to payload keys when available
+    const imageSelect = hasPayload ? "COALESCE(image_url, payload->>'image', payload->>'image_url', payload->>'cover', payload->>'thumbnail') as image" : "image_url as image";
 
     if (lat !== null && lng !== null) {
       // Use PostGIS ST_DWithin for fast geospatial query
@@ -86,7 +87,7 @@ async function discover(req, res) {
       }
     } else {
       // Return all events
-      const result = await pgDb.query(`
+      const sql = `
         SELECT id, event_name as title, description, event_date as "startDate",
           CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) as location,
           venue_latitude as latitude, venue_longitude as longitude,
@@ -95,7 +96,9 @@ async function discover(req, res) {
         FROM events
         ORDER BY event_date ASC NULLS LAST
         LIMIT $1
-      `, [limit]);
+      `;
+      console.log('Discover SQL (default):', sql);
+      const result = await pgDb.query(sql, [limit]);
 
       events = result.rows;
     }
