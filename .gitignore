@@ -29,3 +29,6 @@ server.pid
 .DS_Store
 Thumbs.db
 backend/_node_backup/core.1
+pg_data/
+db_data/
+redis_data/
