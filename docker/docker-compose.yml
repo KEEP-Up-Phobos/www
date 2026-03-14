@@ -104,6 +104,7 @@ services:
       - postgres
     environment:
       DB_HOST: postgres
+      PG_DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: keepup_events
       DB_USER: keepup_user

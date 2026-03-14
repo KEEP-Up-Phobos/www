@@ -20,7 +20,7 @@ const config = {
     host: process.env.PG_DB_HOST || "postgres",
     port: parseInt(process.env.PG_DB_PORT) || 5432,
     user: process.env.PG_DB_USER || "keepup_user",
-    password: process.env.PG_DB_PASSWORD || "keepup_pass_2026",
+    password: process.env.PG_DB_PASSWORD,
     database: process.env.PG_DB_NAME || "keepup_new",
   },
   auth: {

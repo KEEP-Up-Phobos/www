@@ -613,7 +613,7 @@ async function viagogoSearch(req, res) {
         PG_DB_HOST: process.env.PG_DB_HOST || 'postgres',
         PG_DB_PORT: process.env.PG_DB_PORT || '5432',
         PG_DB_USER: process.env.PG_DB_USER || 'keepup_user',
-        PG_DB_PASSWORD: process.env.PG_DB_PASSWORD || 'keepup_pass_2026',
+        PG_DB_PASSWORD: process.env.PG_DB_PASSWORD,
         PG_DB_NAME: process.env.PG_DB_NAME || 'keepup_events'
       }
     });
