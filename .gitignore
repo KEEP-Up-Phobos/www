@@ -32,3 +32,6 @@ backend/_node_backup/core.1
 pg_data/
 db_data/
 redis_data/
+docker/.env
+frontend/react-keepup/.env.local
+backend/certs/
