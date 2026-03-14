@@ -35,3 +35,8 @@ redis_data/
 docker/.env
 frontend/react-keepup/.env.local
 backend/certs/
+backend/certs/
+backend/_node_backup/
+backend/tmp_*.js
+**/__pycache__/
+**/*.pyc
