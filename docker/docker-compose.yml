@@ -107,7 +107,7 @@ services:
       DB_PORT: 5432
       DB_NAME: keepup_events
       DB_USER: keepup_user
-      DB_PASSWORD: ${DB_PASSWORD:-keepup_secret}
+      DB_PASSWORD: ${DB_PASSWORD}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       FOURSQUARE_API_KEY: ${FOURSQUARE_API_KEY}
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY}
