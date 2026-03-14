@@ -15,3 +15,5 @@ core.*
 test_*.js
 test-*.js
 tmp_*.js
+.env
+*.env
