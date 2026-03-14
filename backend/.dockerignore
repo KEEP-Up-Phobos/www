@@ -1,0 +1,17 @@
+node_modules
+venv
+__pycache__
+*.pyc
+*.pyo
+_node_backup
+*.log
+*.pid
+server.pid
+python/venv
+core.*
+*.dump
+.git
+.gitignore
+test_*.js
+test-*.js
+tmp_*.js

@@ -152,7 +152,7 @@ services:
       DB_USER: keepup
       DB_PASSWORD: ${MARIADB_PASSWORD:-keepup_secret}
       PG_DB_USER: keepup_user
-      PG_DB_PASSWORD: ${DB_PASSWORD:-keepup_secret}
+      PG_DB_PASSWORD: ${DB_PASSWORD}
       REDIS_PORT: 6379
       ADMIN_API_KEY: ${ADMIN_API_KEY:-change_me_in_production}
       JOOMLA_DB_HOST: mariadb
