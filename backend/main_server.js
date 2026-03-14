@@ -247,7 +247,7 @@ async function initDB() {
     try {
         // Initialize Redis first (non-blocking failures)
         try {
-            redis = new Redis(redisConfig);
+            redis = new Redis(redisConfig.url, { maxRetriesPerRequest: null, enableReadyCheck: false, retryStrategy: redisConfig.retryStrategy, connectTimeout: 5000, commandTimeout: 5000 });
             redis.on('error', (err) => {
                 console.error('[Redis Error]', {
                     message: err?.message || 'Unknown Redis error',

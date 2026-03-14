@@ -8,10 +8,10 @@ router.post('/feather-dragon/search', adminController.featherDragonSearch);
 router.post('/dragons-unleashed', adminController.dragonsUnleashed);
 
 router.get('/fetcher/status', adminController.fetcherStatus);
-router.post('/fetcher/start', adminController.fetcherStart);
-router.post('/fetcher/pause', adminController.fetcherPause);
-router.post('/fetcher/resume', adminController.fetcherResume);
-router.post('/fetcher/stop', adminController.fetcherStop);
+//router.post('/fetcher/start', adminController.fetcherStart);
+//router.post('/fetcher/pause', adminController.fetcherPause);
+//router.post('/fetcher/resume', adminController.fetcherResume);
+//router.post('/fetcher/stop', adminController.fetcherStop);
 router.post('/crawler/start', adminController.crawlerStart);
 router.post('/intelligent/enhanced', adminController.enhancedCrawler);
 router.post('/crawler/pause', adminController.crawlerPause);
