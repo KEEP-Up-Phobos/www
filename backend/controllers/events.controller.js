@@ -2,70 +2,7 @@
 let db;       // MariaDB pool (for legacy/user data)
 let pgDb;     // Postgres pool (for events with PostGIS)
 const config = require('../config');
-const { discoverRequestsTotal, searchRequestsTotal, eventSavesTotal, eventUnsavesTotal, eventsCreatedTotal, autoPopulateTriggersTotal } = require('../lib/metrics');
-const { enrichEventLocation } = require('../lib/location-handshake');
-let autoPopulate = null;
-try {
-  ({ autoPopulate } = require('../auto-populate'));
-  console.log('🌆 auto-populate helper loaded');
-} catch (err) {
-  console.warn('🌆 auto-populate helper unavailable (expected in Serpents mode):', err.message);
-  autoPopulate = null;
-}
-
-const DEFAULT_RADIUS_KM = 25;
-const MAX_RADIUS_KM = 666;
-const MIN_RADIUS_KM = 1;
-const DEFAULT_LIMIT = 100;
-const MAX_LIMIT = 500;
-
-const clampRadiusKm = (value = DEFAULT_RADIUS_KM) => {
-  if (!Number.isFinite(value)) return DEFAULT_RADIUS_KM;
-  return Math.min(Math.max(value, MIN_RADIUS_KM), MAX_RADIUS_KM);
-};
-
-const parseFloatOrNull = (value) => {
-  if (value === undefined || value === null || value === '') return null;
-  const parsed = parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-let geoProviderSupportCache = null;
-let geoProviderSupportPromise = null;
-
-async function getGeoProviderSupport() {
-  if (geoProviderSupportCache || !pgDb) {
-    return geoProviderSupportCache || { hasColumn: false, selectExpr: 'NULL::text AS geo_provider' };
-  }
-
-  if (!geoProviderSupportPromise) {
-    geoProviderSupportPromise = pgDb.query(
-      `SELECT EXISTS (
-         SELECT 1
-         FROM information_schema.columns
-         WHERE table_schema = current_schema()
-           AND table_name = 'events'
-           AND column_name = 'geo_provider'
-       ) AS has_column`
-    )
-      .then((result) => {
-        const hasColumn = !!result.rows?.[0]?.has_column;
-        geoProviderSupportCache = {
-          hasColumn,
-          selectExpr: hasColumn
-            ? `COALESCE(geo_provider, 'source_coordinates') AS geo_provider`
-            : `NULL::text AS geo_provider`,
-        };
-        return geoProviderSupportCache;
-      })
-      .catch((_err) => {
-        geoProviderSupportCache = { hasColumn: false, selectExpr: 'NULL::text AS geo_provider' };
-        return geoProviderSupportCache;
-      });
-  }
-
-  return geoProviderSupportPromise;
-}
+const { autoPopulate } = require('../auto-populate');
 
 function setDbPool(mariaPool, postgresPool) {
   db = mariaPool;
@@ -76,100 +13,26 @@ function setDbPool(mariaPool, postgresPool) {
 async function discover(req, res) {
   try {
     console.log('🔍 Discover endpoint called with query:', req.query);
-    discoverRequestsTotal.inc();
 
     if (!pgDb) {
       console.error('❌ Postgres pool not available in events controller');
       return res.status(500).json({ ok: false, error: 'Database not initialized', events: [] });
     }
 
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
-
-    const cityQuery = (req.query.q || req.query.city || '').trim();
-    const city = cityQuery.length ? cityQuery : '';
-    const requestedLat = parseFloatOrNull(req.query.lat);
-    const requestedLng = parseFloatOrNull(req.query.lng);
-    const requestedRadius = parseFloatOrNull(req.query.radius);
-    const parsedLimit = parseInt(req.query.limit, 10);
-    const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const city = req.query.q || req.query.city || '';
+    const lat = req.query.lat ? parseFloat(req.query.lat) : null;
+    const lng = req.query.lng ? parseFloat(req.query.lng) : null;
+    const radius = req.query.radius ? parseFloat(req.query.radius) : 25; // Default 25km
+    const limit = parseInt(req.query.limit) || 100;
     const minEvents = 5;
 
     let events = [];
     let shouldPopulate = false;
 
-    let effectiveLat = requestedLat;
-    let effectiveLng = requestedLng;
-    let effectiveRadius = requestedRadius;
-    let profileForLocation = null;
-
-    if (req.user && req.user.id) {
-      try {
-        const profileResult = await pgDb.query(
-          `SELECT latitude, longitude, home_latitude, home_longitude, radius_km
-           FROM user_profiles
-           WHERE user_id = $1`,
-          [req.user.id]
-        );
-        if (profileResult.rows.length > 0) {
-          profileForLocation = profileResult.rows[0];
-          console.log(`📍 Loaded profile location for user ${req.user.id}`);
-        }
-      } catch (e) {
-        console.log(`⚠️ Could not fetch user location profile: ${e.message}`);
-      }
-    }
-
-    if ((effectiveLat === null || effectiveLng === null) && profileForLocation) {
-      if (profileForLocation.latitude != null && profileForLocation.longitude != null) {
-        effectiveLat = profileForLocation.latitude;
-        effectiveLng = profileForLocation.longitude;
-      } else if (profileForLocation.home_latitude != null && profileForLocation.home_longitude != null) {
-        effectiveLat = profileForLocation.home_latitude;
-        effectiveLng = profileForLocation.home_longitude;
-      }
-    }
-
-    if (effectiveRadius === null && profileForLocation?.radius_km != null) {
-      effectiveRadius = profileForLocation.radius_km;
-    }
-
-    const finalRadiusKm = clampRadiusKm(effectiveRadius ?? DEFAULT_RADIUS_KM);
-    const unlimitedRadius = finalRadiusKm >= MAX_RADIUS_KM;
-    const hasCoordinates = effectiveLat !== null && effectiveLng !== null;
-
-    if (hasCoordinates) {
-      const cityLog = city ? ` + filter "${city}"` : '';
-      console.log(`🔍 PostGIS: Searching within ${unlimitedRadius ? 'unlimited radius' : finalRadiusKm + 'km'} of (${effectiveLat}, ${effectiveLng})${cityLog}`);
-
-      const params = [effectiveLat, effectiveLng];
-      let nextParam = 3;
-
-      let radiusClause = '';
-      if (!unlimitedRadius) {
-        params.push(finalRadiusKm * 1000);
-        radiusClause = `
-          AND ST_DWithin(
-            geom::geography,
-            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
-            $${nextParam}
-          )`;
-        nextParam++;
-      }
-
-      let cityClause = '';
-      if (city) {
-        params.push(`%${city}%`);
-        cityClause = `
-          AND (
-            venue_city ILIKE $${nextParam}
-            OR venue_name ILIKE $${nextParam}
-            OR event_name ILIKE $${nextParam}
-          )`;
-        nextParam++;
-      }
-
-      const limitParam = nextParam;
-      params.push(limit);
+    if (lat !== null && lng !== null) {
+      // Use PostGIS ST_DWithin for fast geospatial query
+      console.log(`🔍 PostGIS: Searching for events within ${radius}km of (${lat}, ${lng})`);
+      const radiusMeters = radius * 1000;
 
       const result = await pgDb.query(`
         SELECT id,
@@ -189,189 +52,58 @@ async function discover(req, res) {
           category,
           ticket_url,
           image_url AS image,
-          ${geoProviderSelect},
           ROUND((ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) / 1000.0)::numeric, 1) AS distance_km
         FROM events
         WHERE geom IS NOT NULL
-        ${radiusClause}
-        ${cityClause}
+          AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography, $3)
         ORDER BY distance_km ASC, event_date ASC NULLS LAST
-        LIMIT $${limitParam}
-      `, params);
+        LIMIT $4
+      `, [lat, lng, radiusMeters, limit]);
 
       events = result.rows;
 
       if (events.length < minEvents) {
-        // Found too few events - try reverse-geocoding to city and searching by venue_city name
-        console.log(`📍 Low event count within ${finalRadiusKm}km (${events.length}/${minEvents}) - trying city name fallback...`);
-        
-        // Try to find nearby cities based on coordinates to search by name
-        const nearbyResult = await pgDb.query(`
-          SELECT DISTINCT venue_city, COUNT(*) as city_count
-          FROM events
-          WHERE geom IS NOT NULL
-          AND ST_DWithin(
-            geom::geography,
-            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
-            $3
-          )
-          AND venue_city IS NOT NULL
-          AND venue_city != ''
-          GROUP BY venue_city
-          ORDER BY city_count DESC, venue_city ASC
-          LIMIT 1
-        `, [effectiveLat, effectiveLng, finalRadiusKm > 100 ? (finalRadiusKm * 1000) : 500000]); // Use larger radius if initial was small
-        
-        if (nearbyResult.rows.length > 0) {
-          const targetCity = nearbyResult.rows[0].venue_city;
-          console.log(`🔍 Found nearby city: "${targetCity}" - searching by name`);
-          
-          const citySearchResult = await pgDb.query(`
-            SELECT id,
-              event_name AS event_name,
-              event_name AS title,
-              description,
-              event_date AS start_date,
-              event_date AS "startDate",
-              venue_name,
-              venue_city,
-              venue_country,
-              CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) AS location,
-              venue_latitude AS latitude,
-              venue_longitude AS longitude,
-              event_url AS url,
-              source,
-              category,
-              ticket_url,
-              image_url AS image,
-              ${geoProviderSelect},
-              ROUND((ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) / 1000.0)::numeric, 1) AS distance_km
-            FROM events
-            WHERE geom IS NOT NULL
-            AND venue_city ILIKE $3
-            ORDER BY event_date ASC NULLS LAST
-            LIMIT $4
-          `, [effectiveLat, effectiveLng, targetCity, limit]);
-          
-          if (citySearchResult.rows.length > events.length) {
-            console.log(`✅ City name search found ${citySearchResult.rows.length} events for "${targetCity}" (was ${events.length})`);
-            events = citySearchResult.rows;
-          }
-        }
-        
-        if (events.length < minEvents) {
-          console.log(`📍 Still not enough events (${events.length}/${minEvents}) - triggering auto-populate`);
-          shouldPopulate = true;
-        }
+        console.log(`📍 Not enough events within ${radius}km (${events.length}/${minEvents})`);
+        shouldPopulate = true;
       }
     } else if (city) {
-      console.log(`🔍 Searching for events in city: ${city} (geocoding first)`);
+      // City-based search — also compute distance if we can find city center coords
+      console.log(`🔍 Searching for events in city: ${city}`);
 
-      // First, try to geocode the city from fetcher_cities table
-      const cityLookup = await pgDb.query(
-        `SELECT id, name, latitude, longitude, country FROM fetcher_cities 
-         WHERE LOWER(name) = LOWER($1) 
-         ORDER BY population_rank DESC NULLS LAST 
-         LIMIT 1`,
-        [city]
-      );
+      const result = await pgDb.query(`
+        SELECT id,
+          event_name AS event_name,
+          event_name AS title,
+          description,
+          event_date AS start_date,
+          event_date AS "startDate",
+          venue_name,
+          venue_city,
+          venue_country,
+          CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) AS location,
+          venue_latitude AS latitude,
+          venue_longitude AS longitude,
+          event_url AS url,
+          source,
+          category,
+          ticket_url,
+          image_url AS image,
+          NULL::numeric AS distance_km
+        FROM events
+        WHERE venue_city ILIKE $1 OR venue_name ILIKE $1
+        ORDER BY event_date ASC NULLS LAST
+        LIMIT $2
+      `, [`%${city}%`, limit]);
 
-      if (cityLookup.rows.length > 0) {
-        // Found the city - use its coordinates with PostGIS
-        const cityData = cityLookup.rows[0];
-        const cityLat = cityData.latitude;
-        const cityLng = cityData.longitude;
-        const cityName = cityData.name;
-
-        console.log(`✅ Geocoded "${city}" to (${cityLat}, ${cityLng}) - ${cityName}, ${cityData.country}`);
-
-        const params = [cityLat, cityLng];
-        let nextParam = 3;
-
-        // Use the default radius for city-based search
-        params.push(finalRadiusKm * 1000);
-        const radiusClause = `
-          AND ST_DWithin(
-            geom::geography,
-            ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
-            $${nextParam}
-          )`;
-        nextParam++;
-
-        const limitParam = nextParam;
-        params.push(limit);
-
-        const result = await pgDb.query(`
-          SELECT id,
-            event_name AS event_name,
-            event_name AS title,
-            description,
-            event_date AS start_date,
-            event_date AS "startDate",
-            venue_name,
-            venue_city,
-            venue_country,
-            CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) AS location,
-            venue_latitude AS latitude,
-            venue_longitude AS longitude,
-            event_url AS url,
-            source,
-            category,
-            ticket_url,
-            image_url AS image,
-            ${geoProviderSelect},
-            ROUND((ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) / 1000.0)::numeric, 1) AS distance_km
-          FROM events
-          WHERE geom IS NOT NULL
-          ${radiusClause}
-          ORDER BY distance_km ASC, event_date ASC NULLS LAST
-          LIMIT $${limitParam}
-        `, params);
-
-        events = result.rows;
-        effectiveLat = cityLat;
-        effectiveLng = cityLng;
-
-        console.log(`📍 Found ${events.length} events near ${cityName}`);
-      } else {
-        // City not found in fetcher_cities - fall back to substring search within exact city matches
-        console.log(`⚠️  City "${city}" not in geocoded database; falling back to exact city match search`);
-
-        const result = await pgDb.query(`
-          SELECT id,
-            event_name AS event_name,
-            event_name AS title,
-            description,
-            event_date AS start_date,
-            event_date AS "startDate",
-            venue_name,
-            venue_city,
-            venue_country,
-            CONCAT(COALESCE(venue_name, 'TBA'), ' - ', COALESCE(venue_city, 'Unknown'), ', ', COALESCE(venue_country, 'Unknown')) AS location,
-            venue_latitude AS latitude,
-            venue_longitude AS longitude,
-            event_url AS url,
-            source,
-            category,
-            ticket_url,
-            image_url AS image,
-            ${geoProviderSelect},
-            NULL::numeric AS distance_km
-          FROM events
-          WHERE geom IS NOT NULL
-          AND (venue_city ILIKE $1 OR LOWER(venue_city) = LOWER($2))
-          ORDER BY event_date ASC NULLS LAST
-          LIMIT $3
-        `, [`%${city}%`, city, limit]);
-
-        events = result.rows;
-      }
+      events = result.rows;
 
       if (events.length < minEvents) {
         console.log(`📍 Not enough events for ${city} (${events.length}/${minEvents})`);
         shouldPopulate = true;
       }
     } else {
+      // NO LOCATION PROVIDED — do NOT return all events globally.
+      // Return empty with a message asking the user to enable location.
       console.log('⚠️ Discover: No location provided, refusing global query');
       return res.json({
         ok: true,
@@ -389,34 +121,22 @@ async function discover(req, res) {
 
     // 🌆 AUTO-POPULATE: If city has < 5 events, trigger parallel AI search in background
     let populating = false;
-    let populateStatus = null;
-    if (shouldPopulate && (hasCoordinates || city)) {
+    if (shouldPopulate && (lat !== null || city)) {
       const redis = req.app?.locals?.redis || null;
       const populateCity = city || 'Unknown';
-      if (typeof autoPopulate === 'function') {
-        autoPopulateTriggersTotal.inc();
-        const result = await autoPopulate({
-          city: populateCity,
-          country: 'Brazil',
-          lat: hasCoordinates ? effectiveLat : null,
-          lng: hasCoordinates ? effectiveLng : null,
-          countryCode: 'BR',
-          redis
-        }).catch(err => {
-          console.error('🌆 Auto-populate trigger error:', err.message);
-          return null;
-        });
-
-        if (result) {
-          populateStatus = result;
-          populating = result.spawned === true || result.status === 'inflight';
-          if (result.status === 'cooldown') {
-            console.log(`🌆 Auto-populate cooldown for ${populateCity}: ${result.cooldownSecondsRemaining || 0}s`);
-          }
-        }
-      } else {
-        console.warn('🌆 Auto-populate helper unavailable; skipping background sweep.');
-      }
+      autoPopulate({
+        city: populateCity,
+        country: 'Brazil',
+        lat: lat,
+        lng: lng,
+        countryCode: 'BR',
+        redis
+      }).then(spawned => {
+        if (spawned) populating = true;
+      }).catch(err => {
+        console.error('🌆 Auto-populate trigger error:', err.message);
+      });
+      populating = true; // optimistic — tell frontend to re-check
     }
 
     // Add showOnMap flag and hasDate flag for frontend filtering
@@ -425,7 +145,6 @@ async function discover(req, res) {
       ...event,
       showOnMap: !!(event.latitude && event.longitude),
       hasDate: !!(event.startDate || event.start_date),
-      geo_provider: event.geo_provider || (event.latitude && event.longitude ? 'source_coordinates' : 'unknown'),
       venue_name: event.venue_name || '',
       venue_city: event.venue_city || '',
       // Strip foursquare.com URLs — consumer site is defunct
@@ -438,10 +157,9 @@ async function discover(req, res) {
       count: events.length,
       total: parseInt(countResult.rows[0].count),
       city: city || null,
-      location: hasCoordinates ? { lat: effectiveLat, lng: effectiveLng, radius: finalRadiusKm } : null,
+      location: lat !== null && lng !== null ? { lat, lng, radius } : null,
       populated: shouldPopulate,
-      populating,  // tells frontend: "we're fetching more events, re-check in ~15s"
-      populateStatus
+      populating  // tells frontend: "we're fetching more events, re-check in ~15s"
     });
   } catch (err) {
     console.error('❌ Discover events error:', err);
@@ -452,8 +170,6 @@ async function discover(req, res) {
 // /api/events/search (POST) - Uses Postgres
 async function searchPost(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
-    searchRequestsTotal.inc();
     const q = req.body.query || '';
     const limit = parseInt(req.body.limit) || 50;
     if (!q) return res.json({ ok: false, error: 'Query required', events: [] });
@@ -475,8 +191,7 @@ async function searchPost(req, res) {
         source,
         category,
         ticket_url,
-        image_url AS image,
-        ${geoProviderSelect}
+        image_url AS image
       FROM events
       WHERE event_name ILIKE $1 OR venue_name ILIKE $1 OR venue_city ILIKE $1 OR category ILIKE $1
       ORDER BY event_date ASC NULLS LAST
@@ -493,7 +208,6 @@ async function searchPost(req, res) {
 // /api/events/search (GET) - Uses Postgres
 async function searchGet(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const q = req.query.q || '';
     const limit = parseInt(req.query.limit) || 50;
     if (!q) return res.json({ ok: false, error: 'Query required', events: [] });
@@ -515,8 +229,7 @@ async function searchGet(req, res) {
         source,
         category,
         ticket_url,
-        image_url AS image,
-        ${geoProviderSelect}
+        image_url AS image
       FROM events
       WHERE event_name ILIKE $1 OR venue_name ILIKE $1 OR venue_city ILIKE $1 OR category ILIKE $1
       ORDER BY event_date ASC NULLS LAST
@@ -533,7 +246,6 @@ async function searchGet(req, res) {
 // /api/events/artist/:name - Uses Postgres
 async function byArtist(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const artistName = decodeURIComponent(req.params.name);
     const result = await pgDb.query(`
       SELECT id,
@@ -552,8 +264,7 @@ async function byArtist(req, res) {
         source,
         category,
         ticket_url,
-        image_url AS image,
-        ${geoProviderSelect}
+        image_url AS image
       FROM events
       WHERE event_name ILIKE $1
       ORDER BY event_date ASC NULLS LAST
@@ -568,7 +279,6 @@ async function byArtist(req, res) {
 // /api/events/country/:country - Uses Postgres
 async function byCountry(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const country = decodeURIComponent(req.params.country);
     const result = await pgDb.query(`
       SELECT id,
@@ -587,8 +297,7 @@ async function byCountry(req, res) {
         source,
         category,
         ticket_url,
-        image_url AS image,
-        ${geoProviderSelect}
+        image_url AS image
       FROM events
       WHERE venue_country ILIKE $1
       ORDER BY event_date ASC NULLS LAST
@@ -631,7 +340,6 @@ async function save(req, res) {
     }
     
     console.log(`✅ Event ${event_id} saved by user ${user_id}`);
-    eventSavesTotal.inc();
     res.json({ ok: true, message: 'Event saved', saved_event: result.rows[0] });
   } catch (err) {
     console.error('❌ Error saving event:', err);
@@ -664,7 +372,6 @@ async function unsave(req, res) {
     );
     
     console.log(`✅ Event ${event_id} unsaved by user ${user_id}`);
-    eventUnsavesTotal.inc();
     res.json({ ok: true, message: 'Event unsaved', count: result.rowCount });
   } catch (err) {
     console.error('❌ Error unsaving event:', err);
@@ -675,7 +382,6 @@ async function unsave(req, res) {
 // /api/events/saved - Get all saved events for current user
 async function saved(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const { user } = req;
     
     if (!user || !user.id) {
@@ -708,8 +414,7 @@ async function saved(req, res) {
          e.source,
          e.category,
          e.ticket_url,
-         e.image_url AS image,
-         ${geoProviderSelect.replace('geo_provider', 'e.geo_provider')}
+         e.image_url AS image
        FROM saved_events se
        JOIN events e ON se.event_id = e.id
        WHERE se.user_id = $1
@@ -757,7 +462,6 @@ async function isSaved(req, res) {
 // /api/events/nearby - Uses Postgres PostGIS for geospatial query
 async function nearby(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const { userId, lat, lng, radius } = req.query;
     let latitude = parseFloat(lat);
     let longitude = parseFloat(lng);
@@ -799,7 +503,6 @@ async function nearby(req, res) {
         category,
         ticket_url,
         image_url AS image,
-        ${geoProviderSelect},
         ST_Distance(geom::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) AS distance_meters
       FROM events
       WHERE geom IS NOT NULL
@@ -818,45 +521,17 @@ async function nearby(req, res) {
 // /api/events/create - Inserts into Postgres
 async function create(req, res) {
   try {
-    const { hasColumn: hasGeoProviderColumn } = await getGeoProviderSupport();
     const { event_name, description, event_date, venue_name, venue_city, venue_country, latitude, longitude, ticket_url, category } = req.body;
     if (!event_name || !event_date) {
       return res.json({ ok: false, error: 'Missing required fields (event_name, event_date)' });
     }
-    const enriched = await enrichEventLocation({
-      venue_name: venue_name || 'TBA',
-      venue_city: venue_city || '',
-      venue_country: venue_country || 'Brazil',
-      latitude: latitude || null,
-      longitude: longitude || null,
-    }).catch(() => null);
-
-    const finalVenueName = enriched?.venue_name || venue_name || 'TBA';
-    const finalVenueCity = enriched?.venue_city || venue_city || '';
-    const finalVenueCountry = enriched?.venue_country || venue_country || 'Brazil';
-    const finalLat = enriched?.latitude ?? latitude ?? null;
-    const finalLng = enriched?.longitude ?? longitude ?? null;
-    const finalGeoProvider = enriched?.geo_provider || 'manual';
-
     const eventKey = `user-${Date.now()}`;
-    const insertSql = hasGeoProviderColumn
-      ? `
-      INSERT INTO events (event_key, event_name, description, event_date, venue_name, venue_city, venue_country, venue_latitude, venue_longitude, ticket_url, source, category, geo_provider)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'user-created', $11, $12)
-      RETURNING id
-    `
-      : `
+    const result = await pgDb.query(`
       INSERT INTO events (event_key, event_name, description, event_date, venue_name, venue_city, venue_country, venue_latitude, venue_longitude, ticket_url, source, category)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'user-created', $11)
       RETURNING id
-    `;
-    const insertParams = hasGeoProviderColumn
-      ? [eventKey, event_name, description || '', event_date, finalVenueName, finalVenueCity, finalVenueCountry, finalLat, finalLng, ticket_url || null, category || '', finalGeoProvider]
-      : [eventKey, event_name, description || '', event_date, finalVenueName, finalVenueCity, finalVenueCountry, finalLat, finalLng, ticket_url || null, category || ''];
-    const result = await pgDb.query(insertSql, insertParams);
-    eventsCreatedTotal.inc({ source: 'user-created' });
+    `, [eventKey, event_name, description || '', event_date, venue_name || 'TBA', venue_city || '', venue_country || 'Brazil', latitude || null, longitude || null, ticket_url || null, category || '']);
     res.json({ ok: true, event_id: result.rows[0].id, message: 'Event created successfully' });
-    eventsCreatedTotal.inc({ source: 'user-created' });
   } catch (err) {
     console.error('❌ Create event error:', err);
     res.json({ ok: false, error: err.message });
@@ -925,7 +600,6 @@ async function viagogoSearch(req, res) {
   console.log(`🎫 Viagogo search triggered for: "${query}"`);
   
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     // Path to the Python script and virtual environment
     const pythonDir = path.join(__dirname, '..', 'python');
     const venvPython = path.join(pythonDir, 'venv', 'bin', 'python');
@@ -999,8 +673,7 @@ async function viagogoSearch(req, res) {
             source,
             category,
             ticket_url,
-            image_url AS image,
-            ${geoProviderSelect}
+            image_url AS image
           FROM events
           WHERE (event_name ILIKE $1 OR venue_city ILIKE $1 OR venue_name ILIKE $1 OR artist_name ILIKE $1)
             AND source = 'viagogo'
@@ -1043,7 +716,6 @@ async function viagogoSearch(req, res) {
 // /api/events/:id - Get a single event by ID with related events
 async function getById(req, res) {
   try {
-    const { selectExpr: geoProviderSelect } = await getGeoProviderSupport();
     const eventId = parseInt(req.params.id, 10);
     if (isNaN(eventId)) {
       return res.status(400).json({ ok: false, error: 'Invalid event ID' });
@@ -1072,7 +744,6 @@ async function getById(req, res) {
         category,
         ticket_url,
         image_url AS image,
-        ${geoProviderSelect},
         artist_name
       FROM events
       WHERE id = $1
@@ -1104,8 +775,7 @@ async function getById(req, res) {
           source,
           category,
           ticket_url,
-          image_url AS image,
-          ${geoProviderSelect}
+          image_url AS image
         FROM events
         WHERE id != $1
           AND (
