@@ -1,0 +1,33 @@
+FROM joomla:latest
+
+# Update packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable Apache modules
+RUN a2enmod rewrite deflate expires headers setenvif mime http2
+
+# Create necessary directories
+RUN mkdir -p /var/www/html/tmp \
+    && mkdir -p /var/www/html/logs \
+    && mkdir -p /var/www/html/cache
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 777 /var/www/html/tmp \
+    && chmod -R 777 /var/www/html/logs \
+    && chmod -R 777 /var/www/html/cache
+
+# Increase PHP limits in php.ini
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "upload_max_filesize = 128M" >> /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "post_max_size = 128M" >> /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "max_input_time = 300" >> /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "max_input_vars = 5000" >> /usr/local/etc/php/conf.d/joomla-limits.ini && \
+    echo "default_charset = utf-8" >> /usr/local/etc/php/conf.d/joomla-limits.ini
+
+EXPOSE 80

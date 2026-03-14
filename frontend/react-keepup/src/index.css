@@ -1,0 +1,33 @@
+/* ── Dark-mode native form controls ───────────────────────────────────────────
+   Prevents the OS-default gray/white popup on <select> dropdowns.
+   color-scheme: dark tells the browser to render native pickers in dark mode;
+   the explicit option rules are a Chromium/Edge/Firefox fallback.           */
+html {
+  color-scheme: dark;
+}
+
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: #1a1a24;
+  color: #ffffff;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

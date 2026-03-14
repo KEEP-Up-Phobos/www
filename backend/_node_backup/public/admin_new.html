@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEEP-Up Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --accent: #06b6d4;
+            --accent-dark: #0891b2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            overflow-x: hidden;
+            padding-top: 8px;
+        }
+        
+        /* Global Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: transparent;
+            z-index: 1000;
+            border-radius: 0;
+        }
+        
+        .progress-bar.active {
+            background: linear-gradient(90deg, var(--accent), var(--success), var(--accent));
+            background-size: 200% 100%;
+            animation: progress 1s ease-in-out infinite;
+        }
+        
+        @keyframes progress {
+            0% { background-position: 0% 0; }
+            100% { background-position: 100% 0; }
+        }
+        
+        .wrapper {
+            display: flex;
+            height: 100vh;
+            gap: 1px;
+            background: var(--border);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        
+        .sidebar h1 {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-section {
+            margin-bottom: 25px;
+        }
+        
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--accent);
+        }
+        
+        .nav-item.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+        }
+        
+        .topbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .topbar-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-idle { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+        .badge-running { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-paused { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: var(--bg-hover);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-body {
+            padding: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .form-input,
+        .form-select {
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .log-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .log-entry.success { color: var(--success); }
+        .log-entry.warning { color: var(--warning); }
+        .log-entry.error { color: var(--danger); }
+        .log-entry.info { color: var(--accent); }
+        
+        .log-time {
+            color: var(--text-muted);
+            margin-right: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 1400px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 240px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .wrapper {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                max-height: 150px;
+                overflow-x: auto;
+                display: flex;
+                align-items: center;
+                gap: 30px;
+            }
+            
+            .sidebar h1 {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            
+            .nav-section {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            
+            .nav-section-title {
+                display: none;
+            }
+            
+            .nav-item {
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+            
+            .topbar {
+                padding: 12px 15px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Progress Bar -->
+    <div class="progress-bar" id="progress-bar"></div>
+    
+    <div class="wrapper">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <h1>🚀 KEEP-Up</h1>
+            <div class="nav-section">
+                <div class="nav-section-title">Control</div>
+                <div class="nav-item active" onclick="showTab('crawler')">🌐 Crawler</div>
+                <div class="nav-item" onclick="showTab('cache')">💾 Cache</div>
+                <div class="nav-item" onclick="showTab('stats')">📊 Stats</div>
+                <div class="nav-item" onclick="showTab('logs')">📝 Logs</div>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span id="status-text">Ready</span>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main">
+            <div class="topbar">
+                <div class="topbar-title" id="tab-title">🌐 Artist Crawler v5.0</div>
+                <div class="topbar-actions">
+                    <span id="user-badge" style="color: #cbd5e1; font-size: 0.85rem; padding: 6px 12px; display: none;">👤 <span id="user-name"></span></span>
+                    <span class="badge badge-idle" id="status-badge">IDLE</span>
+                </div>
+            </div>
+            
+            <div class="content">
+                <!-- CRAWLER TAB -->
+                <div id="tab-crawler" class="tab-content">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Artists in Database</div>
+                            <div class="stat-value" id="stat-artists">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Events Found</div>
+                            <div class="stat-value" id="stat-events">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Processing Speed</div>
+                            <div class="stat-value" id="stat-speed">0/min</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Hit Rate</div>
+                            <div class="stat-value" id="stat-cache">--</div>
+                        </div>
+                    </div>
+                    
+                    <!-- UNIFIED CRAWLER CONTROL -->
+                    <div class="section">
+                        <div class="section-header">🎯 Unified Crawler Control</div>
+                        <div class="section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Mode</label>
+                                    <select class="form-select" id="crawler-mode" onchange="updateCrawlerMode()">
+                                        <option value="find_new">🆕 Find New Artists (Wikipedia)</option>
+                                        <option value="update_existing">🔄 Update Existing Artists</option>
+                                        <option value="both">⚡ Both Find & Update</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Parallel Batch Size</label>
+                                    <input type="number" class="form-input" id="batch-size" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="skip-dead-artists" checked style="width: auto; cursor: pointer;">
+                                        <span>Skip Dead Artists (No Events)</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">⚠️ Artists with death dates won't be added</small>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="log-details" checked style="width: auto; cursor: pointer;">
+                                        <span>Detailed Logging</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">📝 Log every artist processed</small>
+                                </div>
+                            </div>
+                            
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" id="btn-start" onclick="startCrawler()">▶️ Start Crawling</button>
+                                <button class="btn btn-secondary" id="btn-pause" onclick="pauseCrawler()" disabled>⏸️ Pause</button>
+                                <button class="btn btn-danger" id="btn-stop" onclick="stopCrawler()" disabled>⏹️ Stop</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- REAL-TIME STATS -->
+                    <div class="section">
+                        <div class="section-header">📊 Real-time Statistics</div>
+                        <div class="section-body">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Processing</div>
+                                    <div style="margin-top: 5px; line-height: 1.8;">
+                                        <div><strong>Status:</strong> <span id="current-status">Ready</span></div>
+                                        <div><strong>Artists Processed:</strong> <span id="current-count">0</span></div>
+                                        <div><strong>Events Added:</strong> <span id="current-events">0</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Performance</div>
+                                    <div style="margin-top: 5px; line-height: 1.8;">
+                                        <div><strong>Uptime:</strong> <span id="current-uptime">0m 0s</span></div>
+                                        <div><strong>Cache Hits:</strong> <span id="current-cache">0</span></div>
+                                        <div><strong>Skipped (Dead):</strong> <span id="skipped-dead">0</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CACHE TAB -->
+                <div id="tab-cache" class="tab-content hidden">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Hits</div>
+                            <div class="stat-value" id="cache-hits">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Misses</div>
+                            <div class="stat-value" id="cache-misses">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cached Responses</div>
+                            <div class="stat-value" id="cache-size">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Health</div>
+                            <div class="stat-value" id="cache-health">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">🗑️ Cache Management</div>
+                        <div class="section-body">
+                            <div class="button-group">
+                                <button class="btn btn-secondary" onclick="getStats()">🔄 Refresh Stats</button>
+                                <button class="btn btn-danger" onclick="clearCache()">🗑️ Clear Cache</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- STATS TAB -->
+                <div id="tab-stats" class="tab-content hidden">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Total Artists</div>
+                            <div class="stat-value" id="db-artists">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Total Events</div>
+                            <div class="stat-value" id="db-events">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Events (24h)</div>
+                            <div class="stat-value" id="db-recent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Proxies Available</div>
+                            <div class="stat-value" id="proxy-count">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">📈 Statistics</div>
+                        <div class="section-body">
+                            <button class="btn btn-primary" onclick="loadStats()">🔄 Load Stats</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- LOGS TAB -->
+                <div id="tab-logs" class="tab-content hidden">
+                    <div class="section">
+                        <div class="section-header">📝 Live Activity Log</div>
+                        <div class="section-body">
+                            <div class="log-box" id="log-box">
+                                <div class="log-entry info"><span class="log-time">--:--</span> Ready for commands</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let isRunning = false;
+        let ws = null;
+        let joomlaAuth = { user: null, token: null };
+        let crawlerMode = 'find_new';
+        let startTime = 0;
+        let skipDeadArtists = true;
+        let logDetails = true;
+        
+        // Handle Joomla authentication via postMessage
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'joomla_auth') {
+                joomlaAuth.user = event.data.user;
+                joomlaAuth.token = event.data.token;
+                console.log('Joomla auth received for user:', joomlaAuth.user);
+                
+                // Show user badge in topbar
+                document.getElementById('user-name').textContent = joomlaAuth.user;
+                document.getElementById('user-badge').style.display = 'inline-block';
+                
+                addLog('✅ Joomla authentication verified for ' + joomlaAuth.user, 'success');
+            }
+        });
+        
+        // Notify parent that auth is ready
+        window.addEventListener('load', () => {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'auth_request' }, '*');
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            loadStats();
+            setInterval(updateUptime, 1000);
+            setInterval(loadStats, 30000);
+        });
+        
+        function updateCrawlerMode() {
+            crawlerMode = document.getElementById('crawler-mode').value;
+            skipDeadArtists = document.getElementById('skip-dead-artists').checked;
+            logDetails = document.getElementById('log-details').checked;
+            
+            const modeNames = {
+                find_new: '🆕 Finding new artists from Wikipedia...',
+                update_existing: '🔄 Updating existing artist events...',
+                both: '⚡ Finding new & updating existing...'
+            };
+            
+            addLog('Mode: ' + modeNames[crawlerMode], 'info');
+            if (skipDeadArtists) addLog('⚠️ Dead artists will be skipped', 'warning');
+            if (logDetails) addLog('📝 Detailed logging enabled', 'info');
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update topbar title
+            const titles = {
+                crawler: '🌐 Artist Crawler v5.0',
+                cache: '💾 Cache Management',
+                stats: '📊 Database Statistics',
+                logs: '📝 Activity Logs'
+            };
+            document.getElementById('tab-title').textContent = titles[tabName];
+        }
+        
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(protocol + '//' + window.location.host + '/ws/admin');
+            
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            };
+            
+            ws.onclose = () => setTimeout(connectWebSocket, 3000);
+        }
+        
+        function handleMessage(msg) {
+            if (msg.type === 'log') {
+                addLog(msg.message, 'info');
+            } else if (msg.type === 'progress') {
+                updateStats(msg.data);
+            } else if (msg.type === 'complete') {
+                isRunning = false;
+                updateRunningState();
+                showProgressBar(false);
+                addLog('✅ Crawling completed!', 'success');
+            }
+        }
+        
+        function updateStats(data) {
+            if (data.artistsFound) document.getElementById('stat-artists').textContent = data.artistsFound.toLocaleString();
+            if (data.eventsFound) document.getElementById('stat-events').textContent = data.eventsFound.toLocaleString();
+            if (data.currentCount) document.getElementById('current-count').textContent = data.currentCount;
+            if (data.currentEvents) document.getElementById('current-events').textContent = data.currentEvents;
+            if (data.cacheHits) document.getElementById('current-cache').textContent = data.cacheHits;
+            if (data.skippedDead) document.getElementById('skipped-dead').textContent = data.skippedDead;
+            if (data.speed) document.getElementById('stat-speed').textContent = data.speed.toFixed(0) + '/min';
+            if (data.cacheHitRate) document.getElementById('stat-cache').textContent = (data.cacheHitRate * 100).toFixed(1) + '%';
+        }
+        
+        function showProgressBar(show) {
+            const bar = document.getElementById('progress-bar');
+            if (show) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+        
+        async function startCrawler() {
+            updateCrawlerMode();
+            
+            const payload = {
+                mode: crawlerMode,
+                skipDeadArtists: skipDeadArtists,
+                logDetails: logDetails,
+                batchSize: parseInt(document.getElementById('batch-size').value)
+            };
+            
+            const res = await fetch('/api/admin/intelligent/enhanced?dev=true', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            if (data.ok) {
+                isRunning = true;
+                updateRunningState();
+                showProgressBar(true);
+                startTime = Date.now();
+                addLog('🚀 Crawler started in ' + (crawlerMode === 'find_new' ? 'NEW ARTISTS' : crawlerMode === 'update_existing' ? 'UPDATE' : 'HYBRID') + ' mode', 'success');
+            } else {
+                addLog('❌ Error: ' + data.error, 'error');
+            }
+        }
+        
+        async function pauseCrawler() {
+            fetch('/api/admin/intelligent/pause?dev=true', { method: 'POST' });
+            showProgressBar(false);
+            addLog('⏸️ Crawler paused', 'warning');
+        }
+        
+        async function stopCrawler() {
+            if (confirm('Stop crawling?')) {
+                await fetch('/api/admin/intelligent/stop?dev=true', { method: 'POST' });
+                isRunning = false;
+                updateRunningState();
+                showProgressBar(false);
+                addLog('⏹️ Crawler stopped', 'warning');
+            }
+        }
+        
+        async function getStats() {
+            const res = await fetch('/api/admin/cache/stats?dev=true');
+            const data = await res.json();
+            if (data.ok && data.stats) {
+                document.getElementById('cache-hits').textContent = data.stats.cacheHits || 0;
+                document.getElementById('cache-misses').textContent = data.stats.cacheMisses || 0;
+                document.getElementById('cache-size').textContent = data.stats.cacheSize || 0;
+                const hitRate = data.stats.cacheHitRate || 0;
+                document.getElementById('cache-health').textContent = (hitRate * 100).toFixed(0) + '%';
+            }
+        }
+        
+        async function clearCache() {
+            if (confirm('Clear all cache and checkpoint?')) {
+                const res = await fetch('/api/admin/cache/clear?dev=true', { method: 'POST' });
+                const data = await res.json();
+                addLog(data.message, data.ok ? 'success' : 'error');
+            }
+        }
+        
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats?dev=true');
+            const data = await res.json();
+            if (data.ok) {
+                document.getElementById('db-artists').textContent = data.artists.toLocaleString();
+                document.getElementById('db-events').textContent = data.events.toLocaleString();
+                document.getElementById('db-recent').textContent = data.recentEvents.toLocaleString();
+            }
+        }
+        
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-time">${time}</span> ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            
+            // Keep max 200 entries (increased from 100)
+            while (logBox.children.length > 200) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        }
+        
+        function updateRunningState() {
+            const badge = document.getElementById('status-badge');
+            const statusText = document.getElementById('status-text');
+            
+            if (isRunning) {
+                badge.className = 'badge badge-running';
+                badge.textContent = 'RUNNING';
+                statusText.textContent = 'Running...';
+                document.getElementById('current-status').textContent = 'Processing...';
+                document.getElementById('btn-start').disabled = true;
+                document.getElementById('btn-pause').disabled = false;
+                document.getElementById('btn-stop').disabled = false;
+            } else {
+                badge.className = 'badge badge-idle';
+                badge.textContent = 'IDLE';
+                statusText.textContent = 'Ready';
+                document.getElementById('current-status').textContent = 'Ready';
+                document.getElementById('btn-start').disabled = false;
+                document.getElementById('btn-pause').disabled = true;
+                document.getElementById('btn-stop').disabled = true;
+                startTime = 0;
+            }
+        }
+        
+        function updateUptime() {
+            if (isRunning && startTime > 0) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                document.getElementById('current-uptime').textContent = mins + 'm ' + secs + 's';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -144,6 +144,12 @@
 }
 
 .form-group input,
+.form-group select option,
+.form-group select optgroup {
+  background-color: #1a1a24;
+  color: #ffffff;
+}
+
 .form-group select {
   padding: 8px 12px;
   border: 1px solid #d1d5db;
@@ -358,6 +364,30 @@
   height: 200px;
 }
 
+/* Strong overrides for admin page panels to ensure transparency */
+.admin-container .stat-card,
+.admin-container .ai-config-section,
+.admin-container .crawler-control-section,
+.admin-container .table-container,
+.admin-container .confirm-dialog,
+.admin-container .create-form,
+.admin-container .event-card,
+.admin-container .admin-section,
+.admin-container .card,
+.admin-container .panel {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: var(--color-text-primary) !important;
+}
+
+.admin-container .table-container th {
+  background: rgba(255,255,255,0.06) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.admin-container .progress-bar { background: rgba(255,255,255,0.06) !important; }
+
 .loading-spinner p {
   color: #6b7280;
   font-size: 1.1rem;
@@ -400,4 +430,373 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+/* ═══════════ Populate Cards ═══════════ */
+.stat-card-wide {
+  grid-column: 1 / -1;
+}
+
+.populate-card {
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+
+.populate-desc {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.populate-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.populate-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.populate-btn {
+  min-width: 180px;
+  padding: 12px 20px !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+.input-sm {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  font-size: 0.9rem;
+}
+
+.input-select {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  font-size: 0.9rem;
+  min-width: 180px;
+}
+
+.input-town {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.input-town::placeholder {
+  color: #6b7280;
+}
+
+/* ═══════════ Stats Row ═══════════ */
+.stats-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.source-breakdown {
+  margin-top: 12px;
+}
+
+.source-breakdown h4 {
+  margin: 0 0 8px 0;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.source-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.source-tag {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.country-tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+}
+
+/* ═══════════ Live Log ═══════════ */
+.log-card {
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.log-output {
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.8rem;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+.log-line {
+  color: #d1d5db;
+}
+
+.log-line.log-error {
+  color: #fca5a5;
+}
+
+.log-line.log-success {
+  color: #6ee7b7;
+}
+
+/* ═══════════ Small Action Button ═══════════ */
+.action-btn-sm {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.action-btn-sm.secondary {
+  background: rgba(107, 114, 128, 0.3);
+  color: #d1d5db;
+}
+
+.action-btn-sm.secondary:hover {
+  background: rgba(107, 114, 128, 0.5);
+}
+
+.cache-mini {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cache-mini small {
+  color: #9ca3af;
+
+/* ═══════════════ SYSTEM MONITOR WIDGET ═══════════════ */
+
+.system-monitor-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  border: 1px solid #2a2a4a !important;
+  color: #e0e0e0;
+}
+
+.system-monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.system-monitor-header h3 {
+  color: #fff;
+  margin: 0;
+}
+
+.monitor-pulse {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pulse-active {
+  color: #2ed573;
+  background: rgba(46, 213, 115, 0.15);
+  animation: pulse-glow 2s infinite;
+}
+
+.pulse-idle {
+  color: #ffa502;
+  background: rgba(255, 165, 2, 0.15);
+}
+
+.pulse-error {
+  color: #ff4757;
+  background: rgba(255, 71, 87, 0.15);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.system-monitor-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .system-monitor-grid {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+}
+
+/* RAM Progress Bar */
+.ram-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.ram-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.ram-progress-label {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.ram-progress-value {
+  color: #fff;
+  font-weight: 600;
+}
+
+.ram-progress-bar {
+  width: 100%;
+  height: 24px;
+  background-color: #2a2a3e;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #3a3a4e;
+}
+
+.ram-progress-fill {
+  height: 100%;
+  transition: width 0.6s ease, background-color 0.6s ease;
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(46, 213, 115, 0.4);
+}
+
+.ram-progress-detail {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: right;
+}
+
+/* Monitor Stats Grid */
+.monitor-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.monitor-stat {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monitor-stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4ecdc4;
+}
+
+.monitor-stat-label {
+  display: block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Monitor Details */
+.monitor-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.monitor-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #d0d0d0;
+}
+
+.detail-icon {
+  width: 20px;
+  text-align: center;
+}
+
+.monitor-error {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+}
+
+.monitor-offline {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  font-style: italic;
+}
 }

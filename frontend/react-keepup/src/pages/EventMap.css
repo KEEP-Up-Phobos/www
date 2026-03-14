@@ -1,0 +1,854 @@
+/* ═══════════════════════════════════════════════
+   KEEP-Up MAP — Dark theme, mobile-first
+   ═══════════════════════════════════════════════ */
+
+/* ── Root layout ── */
+.kmap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);    /* subtract navbar */
+  background: #0e0e1a;
+  overflow: hidden;
+}
+
+/* ── Stats bar ── */
+.kmap-search {
+  padding: 8px 16px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a3e;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+.kmap-search-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 16, 30, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(102, 126, 234, 0.25);
+  border-radius: 28px;
+  padding: 4px 6px 4px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.kmap-search-icon {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.kmap-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 6px 4px;
+  min-width: 0;
+}
+
+.kmap-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.kmap-search-clear {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.kmap-search-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 22px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.kmap-search-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kmap-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
+}
+
+.kmap-dot {
+  opacity: 0.3;
+}
+
+/* ── Spinner small ── */
+.kmap-spinner-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: kspin 0.6s linear infinite;
+}
+
+@keyframes kspin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Map body (takes 60% of space) ── */
+.kmap-body {
+  flex: 6;
+  position: relative;
+  min-height: 300px;
+}
+
+.kmap-leaflet {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Cluster icons ── */
+.cluster-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* ── Popup ── */
+.kmap-popup {
+  min-width: 180px;
+  max-width: 260px;
+}
+.kmap-popup h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+}
+.kmap-popup-count {
+  color: #667eea;
+  font-size: 0.78rem;
+  margin: 0 0 8px;
+}
+.kmap-popup-event {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  border-top: 1px solid #eee;
+}
+.kmap-popup-title {
+  font-size: 0.82rem;
+  color: #333;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kmap-popup-date {
+  font-size: 0.72rem;
+  color: #888;
+  white-space: nowrap;
+}
+.kmap-popup-more {
+  text-align: center;
+  color: #999;
+  font-size: 0.75rem;
+  margin: 4px 0 2px;
+}
+.kmap-popup-btn {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px;
+  background: #667eea;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Floating controls ── */
+.kmap-controls {
+  position: absolute;
+  right: 12px;
+  top: 80px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kmap-ctrl-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 16, 30, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.kmap-ctrl-btn:hover {
+  background: rgba(102, 126, 234, 0.3);
+  transform: scale(1.05);
+}
+
+.kmap-ctrl-btn:active {
+  transform: scale(0.95);
+}
+
+/* ── Radius slider ── */
+.kmap-radius {
+  position: absolute;
+  bottom: 16px;
+  left: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 16, 30, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 6px 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.kmap-radius label {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 42px;
+}
+
+.kmap-radius-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.kmap-radius-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #667eea;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.kmap-radius-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #667eea;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+/* ═══════════════════════════════════════════════
+   Venue Detail Panel (right side slide-in)
+   ═══════════════════════════════════════════════ */
+
+.kmap-venue-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  z-index: 1001;
+  background: rgba(14, 14, 26, 0.96);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(102, 126, 234, 0.2);
+  overflow-y: auto;
+  animation: slideInRight 0.3s ease-out;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.kmap-venue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kmap-venue-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.kmap-venue-sub {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  margin: 4px 0 0;
+}
+
+.kmap-venue-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kmap-venue-actions {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.kmap-btn-create {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.kmap-btn-create:hover { opacity: 0.85; }
+
+.kmap-venue-events {
+  padding: 16px 20px 24px;
+}
+
+.kmap-venue-events h3 {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px;
+}
+
+/* ── Event card (inside venue panel) ── */
+.kmap-event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+.kmap-event-card:hover { background: rgba(255, 255, 255, 0.08); }
+
+.kmap-event-card-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+.kmap-event-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kmap-event-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.kmap-event-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.kmap-event-card-body h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kmap-event-card-date {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  margin: 2px 0;
+}
+.kmap-event-card-cat {
+  color: #667eea;
+  font-size: 0.72rem;
+  margin: 0;
+}
+.kmap-event-card-link {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Bottom Drawer (Nearby Events / Venues List)
+   ═══════════════════════════════════════════════ */
+
+.kmap-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background: rgba(14, 14, 26, 0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 20px 20px 0 0;
+  transform: translateY(calc(100% - 28px));
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 65vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.kmap-drawer.open {
+  transform: translateY(0);
+}
+
+.kmap-drawer-handle {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+  cursor: pointer;
+}
+
+.kmap-drawer-pill {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.kmap-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px 8px;
+  flex-shrink: 0;
+}
+
+.kmap-drawer-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.kmap-tab {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.kmap-tab.active {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #667eea;
+}
+
+.kmap-drawer-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.kmap-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── List items (shared by both tabs) ── */
+.kmap-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.kmap-list-item:hover { background: rgba(255, 255, 255, 0.06); }
+
+.kmap-list-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+.kmap-list-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kmap-list-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.kmap-venue-count {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.kmap-list-info {
+  flex: 1;
+  min-width: 0;
+}
+.kmap-list-info h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kmap-list-info p {
+  margin: 2px 0 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kmap-list-dist {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.kmap-empty {
+  text-align: center;
+  padding: 24px 0;
+}
+.kmap-empty p {
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+.kmap-empty-sub {
+  font-size: 0.78rem;
+  margin-top: 4px !important;
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ── Loading overlay ── */
+.kmap-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 14, 26, 0.85);
+  backdrop-filter: blur(8px);
+}
+.kmap-loading p {
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.kmap-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: kspin 0.7s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — Mobile (<768px)
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .kmap {
+    height: calc(100vh - 48px);
+  }
+
+  .kmap-search {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .kmap-search-inner {
+    padding: 3px 4px 3px 12px;
+  }
+
+  .kmap-search-input {
+    font-size: 0.85rem;
+  }
+
+  .kmap-search-btn {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .kmap-stats {
+    font-size: 0.68rem;
+    padding: 0 12px;
+  }
+
+  .kmap-controls {
+    right: 8px;
+    top: 72px;
+    gap: 6px;
+  }
+
+  .kmap-ctrl-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .kmap-ctrl-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .kmap-radius {
+    bottom: 36px;
+    left: 8px;
+    padding: 5px 10px;
+    border-radius: 16px;
+  }
+
+  .kmap-radius label {
+    font-size: 0.72rem;
+    min-width: 36px;
+  }
+
+  .kmap-radius-slider {
+    width: 80px;
+  }
+
+  /* Venue panel goes full width on mobile */
+  .kmap-venue-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 20px 20px 0 0;
+    top: auto;
+    bottom: 0;
+    max-height: 75vh;
+    animation: slideUpMobile 0.3s ease-out;
+  }
+
+  @keyframes slideUpMobile {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .kmap-venue-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .kmap-venue-header {
+    padding: 16px;
+  }
+
+  .kmap-venue-actions {
+    padding: 10px 16px;
+  }
+
+  .kmap-venue-events {
+    padding: 12px 16px 20px;
+  }
+
+  /* Drawer */
+  .kmap-drawer {
+    max-height: 55vh;
+  }
+
+  .kmap-drawer-body {
+    padding: 0 12px 16px;
+  }
+
+  .kmap-list-item {
+    padding: 8px 4px;
+    gap: 10px;
+  }
+
+  .kmap-list-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+  }
+
+  .kmap-list-info h4 {
+    font-size: 0.82rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — Large screens (>1200px)
+   ═══════════════════════════════════════════════ */
+
+@media (min-width: 1200px) {
+  .kmap-search {
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 640px;
+  }
+
+  .kmap-venue-panel {
+    width: 400px;
+  }
+
+  .kmap-drawer {
+    max-height: 50vh;
+    left: 60px;
+    right: 60px;
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Custom scrollbar (drawer)
+   ═══════════════════════════════════════════════ */
+
+.kmap-drawer-body::-webkit-scrollbar,
+.kmap-venue-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.kmap-drawer-body::-webkit-scrollbar-track,
+.kmap-venue-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.kmap-drawer-body::-webkit-scrollbar-thumb,
+.kmap-venue-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+/* ── Leaflet overrides (dark theme) ── */
+.kmap .leaflet-control-attribution {
+  background: rgba(14, 14, 26, 0.7) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.65rem !important;
+}
+.kmap .leaflet-control-attribution a {
+  color: rgba(102, 126, 234, 0.7) !important;
+}
+
+/* ── Events panel (separate div below map) ── */
+.kmap-events-panel {
+  flex: 4;
+  display: flex;
+  flex-direction: column;
+  background: #12122a;
+  border-top: 2px solid #667eea;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.kmap-events-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a3e;
+  flex-shrink: 0;
+}
+
+.kmap-events-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 768px) {
+  .kmap {
+    height: auto;
+    min-height: calc(100vh - 56px);
+  }
+  .kmap-body {
+    min-height: 50vh;
+  }
+  .kmap-events-panel {
+    min-height: 40vh;
+    max-height: 50vh;
+  }
+}

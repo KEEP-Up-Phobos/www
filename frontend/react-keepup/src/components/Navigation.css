@@ -1,0 +1,207 @@
+/* Navigation Container */
+.nav {
+  background: linear-gradient(135deg, #1a1a3e 0%, #0f0f23 100%);
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 0.95rem;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Brand/Logo */
+.nav-brand {
+  flex-shrink: 0;
+}
+
+.nav-brand a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Navigation Links - Desktop */
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: rgba(102, 126, 234, 0.15);
+}
+
+.nav-link.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: #667eea;
+  border-radius: 50%;
+}
+
+/* Icons - Hidden on Desktop */
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  display: none;
+}
+
+/* Text - Visible on Desktop */
+.nav-text {
+  display: inline;
+}
+
+/* Actions (Logout button) */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ff6b6b;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 107, 107, 0.9) !important;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 107, 107, 0.15) !important;
+  color: #ff6b6b !important;
+}
+
+/* Mobile Styles - Instagram-like bottom navigation */
+@media screen and (max-width: 768px) {
+  .nav {
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    height: 60px;
+    padding: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
+    background: #0f0f23;
+  }
+
+  /* Hide brand on mobile */
+  .nav-brand {
+    display: none;
+  }
+
+  /* Navigation links as bottom bar */
+  .nav-links {
+    width: 100%;
+    justify-content: space-around;
+    padding: 0 8px;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .nav-link {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    font-size: 0.7rem;
+    border-radius: 0;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .nav-link::after {
+    display: none;
+  }
+
+  .nav-link.active .nav-icon {
+    color: #667eea;
+  }
+
+  /* Show icons on mobile */
+  .nav-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Hide text on mobile */
+  .nav-text {
+    display: none;
+  }
+
+  /* Hide nav-actions (logout) on mobile — it's in Profile page instead */
+  .nav-actions {
+    display: none;
+  }
+
+  /* Add padding to body to account for fixed bottom nav */
+  body {
+    padding-bottom: 60px;
+  }
+}

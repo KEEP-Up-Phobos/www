@@ -1,0 +1,30 @@
+# Secrets
+**/.env
+docker/.env
+backend/.env
+
+# Dependencies
+**/node_modules/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Data volumes (never commit DB data)
+pg_data/
+db_data/
+redis_data/
+web/
+
+# Build artifacts
+frontend/react-keepup/build/
+frontend/react-keepup/node_modules/
+
+# Logs & pids
+*.pid
+*.log
+server.pid
+
+# OS
+.DS_Store
+Thumbs.db

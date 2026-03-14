@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>KEEP-Up - Event Discovery Platform</title>
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <!-- Load Leaflet synchronously for reliable map initialization -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .profile-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .profile-photos {
+            position: relative;
+            height: 500px;
+            background: #f8f9fa;
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .photo-carousel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .photo-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .photo-slide.active {
+            opacity: 1;
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 48px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+        }
+
+        .photo-navigation {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .photo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .photo-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .photo-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .photo-arrow:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .photo-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .photo-arrow.left {
+            left: 20px;
+        }
+
+        .photo-arrow.right {
+            right: 20px;
+        }
+
+        .photo-arrow.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .profile-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .profile-photos {
+                height: 400px;
+            }
+
+            .photo-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .photo-arrow.left {
+                left: 10px;
+            }
+
+            .photo-arrow.right {
+                right: 10px;
+            }
+
+            .photo-navigation {
+                bottom: 15px;
+            }
+
+            .profile-info {
+                padding: 20px;
+            }
+
+            .profile-name {
+                font-size: 24px;
+            }
+
+            .profile-age {
+                font-size: 20px;
+            }
+        }
+
+        .profile-info {
+            padding: 24px;
+            background: white;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .profile-name-age {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #212529;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .profile-age {
+            font-size: 24px;
+            color: #6c757d;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .edit-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #6c757d;
+        }
+
+        .edit-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .profile-bio {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #495057;
+            margin: 0;
+        }
+
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 0;
+            border-top: 1px solid #e9ecef;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .photo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            cursor: pointer;
+        }
+
+        .photo-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .photo-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Edit Profile Modal Styles */
+        .edit-profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .edit-modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .edit-modal-header {
+            padding: 24px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .edit-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+            margin: 0;
+        }
+
+        .edit-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .edit-close-btn:hover {
+            background: #f8f9fa;
+            color: #495057;
+        }
+
+        .edit-form {
+            padding: 0 24px 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .photos-section {
+            margin-bottom: 24px;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .photo-upload-slot {
+            aspect-ratio: 1;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8f9fa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-upload-slot:hover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .photo-upload-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-upload-slot.empty {
+            color: #6c757d;
+            font-size: 24px;
+        }
+
+        .photo-upload-input {
+            display: none;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .drag-handle {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            font-size: 12px;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+    </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #f3f4f6;
+            color: #111827;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .app-header {
+            background: #ffffff;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #111827;
+        }
+        
+        .login-btn {
+            padding: 0.5rem 1rem;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .login-btn:hover {
+            background: #4f46e5;
+        }
+        
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        .app-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .page-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+        
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            align-items: stretch;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            cursor: pointer;
+            text-decoration: none;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            border-top: 3px solid transparent;
+            font-size: 0.75rem;
+        }
+        
+        .nav-item:hover {
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .nav-item.active {
+            color: #6366f1;
+            border-top-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .nav-icon {
+            font-size: 1.5rem;
+        }
+        
+        .nav-label {
+            font-weight: 500;
+        }
+        
+        /* Scrollbar styling */
+        .page-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .page-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .page-container::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 3px;
+        }
+        
+        .page-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Status Indicator Styles */
+        .status-indicator {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .status-success {
+            background: #f0f9ff;
+            border-color: #0ea5e9;
+            color: #0c4a6e;
+        }
+        
+        .status-warning {
+            background: #fef2f2;
+            border-color: #f87171;
+            color: #991b1b;
+        }
+        
+        /* Modal & Login Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .form-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .form-btn:hover {
+            background: #4f46e5;
+        }
+        
+        .form-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .modal-close {
+            float: right;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .modal-close:hover {
+            color: #111827;
+        }
+        
+        /* Loading States */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: #6b7280;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #a855f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Events Grid */
+        .events-grid {
+            padding: 1rem;
+        }
+        
+        /* Page visibility */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <div class="app-header">
+                <div class="app-title">🎉 KEEP-Up</div>
+                <div class="app-controls">
+                    <div id="user-info" class="user-info" style="display: none;">
+                        <span>👤 <strong id="username-display"></strong></span>
+                        <button id="logout-btn" class="logout-btn">Logout</button>
+                    </div>
+                    <button id="login-btn" class="login-btn" style="display: block;" onclick="console.log('Login clicked'); window.loginManager?.openLoginModal();">Login</button>
+                </div>
+            </div>
+            
+            <div class="page-container">
+                <!-- GRID PAGE -->
+                <div id="grid-page" class="page active">
+                    <div class="page-header">
+                        <h1 class="page-title">🎉 Discover Events</h1>
+                    </div>
+                    <div style="background: #ffffff; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                        <div class="search-box" style="position: relative; z-index: 1;">
+                            <input type="text" class="search-input" id="search-input" placeholder="Search events..." style="width: 100%; padding: 0.75rem 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; color: #111827; font-family: inherit; font-size: 1rem; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                            <div class="filter-controls" style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                                <select id="genre-filter" style="background: #ffffff; color: #374151; border: 2px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                                    <option value="">All Genres</option>
+                                    <option value="rock">Rock</option>
+                                    <option value="pop">Pop</option>
+                                    <option value="hiphop">Hip-Hop</option>
+                                    <option value="electronic">Electronic</option>
+                                    <option value="country">Country</option>
+                                    <option value="jazz">Jazz</option>
+                                </select>
+                                <input type="number" id="price-filter" placeholder="Max Price" style="background: #ffffff; color: #374151; border: 2px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 8px; width: 120px; font-family: inherit; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="events-grid" id="events-grid">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading events from database...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MAP PAGE -->
+                <div id="map-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">🗺️ Events Near You</h1>
+                    </div>
+                    
+                    <div style="padding: 0.5rem;">
+                        <div style="background: #ffffff; padding: 1rem; border-radius: 16px; margin-bottom: 0.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                            <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; justify-content: center;">
+                                    <label style="font-weight: 600; color: #374151; font-size: 0.95rem;">📍 Search Radius:</label>
+                                    <input type="range" id="radius-slider" style="width: 150px; height: 6px; border-radius: 3px; background: #e5e7eb; outline: none; -webkit-appearance: none; appearance: none;" min="0" max="666" value="50" step="10">
+                                    <span id="radius-value" style="font-weight: 700; color: #a855f7; font-size: 1rem; min-width: 60px;">50 km</span>
+                                </div>
+                                <div id="location-status" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: 1px solid; text-align: center;">
+                                    📍 Set your location in profile to see events near you
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <div style="background: #ffffff; padding: 0.75rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                                <span id="total-events" style="font-size: 1.25rem; font-weight: 700; color: #a855f7; display: block;">0</span>
+                                <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">Total Events</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 0.75rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                                <span id="visible-events" style="font-size: 1.25rem; font-weight: 700; color: #a855f7; display: block;">0</span>
+                                <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">Events in Range</div>
+                            </div>
+                            <div style="background: #ffffff; padding: 0.75rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                                <span id="current-radius" style="font-size: 1.25rem; font-weight: 700; color: #a855f7; display: block;">50</span>
+                                <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">Search Radius (km)</div>
+                            </div>
+                        </div>
+                        
+                        <div id="map-container" style="width: 100%; height: 60vh; min-height: 400px; max-height: 70vh; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e0e0e0; position: relative; background: #f8f9fa;">
+                            <div id="map-loading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 1.1rem; z-index: 1000;">
+                                <div style="text-align: center;">
+                                    <div>🗺️ Loading map...</div>
+                                    <button id="retry-map-btn" style="display: none; margin-top: 1rem; padding: 0.5rem 1rem; background: #a855f7; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;" onclick="window.app.retryMapLoad()">🔄 Retry</button>
+                                </div>
+                            </div>
+                            <div id="map" style="width: 100%; height: 100%; position: relative; z-index: 1;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CREATE PAGE -->
+                <div id="create-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">➕ Create Event</h1>
+                    </div>
+                    <div style="padding: 2rem; max-width: 650px; margin: 0 auto;">
+                        <div style="background: #ffffff; padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+                            <form id="create-form" style="position: relative; z-index: 1;">
+                            <form id="create-form" style="position: relative; z-index: 1;">
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Event Name</label>
+                                    <input type="text" id="event-name" required style="width: 100%; padding: 0.75rem; background: #16213e; border: 1px solid #00d4ff; color: #fff; border-radius: 4px;">
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Artist/Organizer</label>
+                                    <input type="text" id="event-artist" required style="width: 100%; padding: 0.75rem; background: #16213e; border: 1px solid #00d4ff; color: #fff; border-radius: 4px;">
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Date & Time</label>
+                                    <input type="datetime-local" id="event-date" required style="width: 100%; padding: 0.75rem; background: #16213e; border: 1px solid #00d4ff; color: #fff; border-radius: 4px;">
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Venue</label>
+                                    <input type="text" id="event-venue" required style="width: 100%; padding: 0.75rem; background: #16213e; border: 1px solid #00d4ff; color: #fff; border-radius: 4px;">
+                                </div>
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Ticket URL</label>
+                                    <input type="url" id="event-ticket-url" style="width: 100%; padding: 0.75rem; background: #16213e; border: 1px solid #00d4ff; color: #fff; border-radius: 4px;">
+                                </div>
+                                <button type="submit" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #00d4ff, #0099ff); color: #000; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 1rem;">Create Event</button>
+                            </form>
+                        </div>
+                    </div>
+                
+                <!-- PROFILE PAGE -->
+                <div id="profile-page" class="page">
+                    <div class="main-content">
+                        <div class="profile-container">
+                            <!-- Photo Carousel -->
+                            <div class="profile-photos">
+                                <div class="photo-carousel" id="photo-carousel">
+                                    <!-- Photos will be populated by JavaScript -->
+                                </div>
+                                
+                                <!-- Navigation Arrows -->
+                                <button class="photo-arrow left" id="prev-photo" onclick="changePhoto(-1)">
+                                    <span>‹</span>
+                                </button>
+                                <button class="photo-arrow right" id="next-photo" onclick="changePhoto(1)">
+                                    <span>›</span>
+                                </button>
+                                
+                                <!-- Navigation Dots -->
+                                <div class="photo-navigation" id="photo-navigation">
+                                    <!-- Dots will be populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Profile Info -->
+                            <div class="profile-info">
+                                <div class="profile-header">
+                                    <div class="profile-name-age">
+                                        <h1 class="profile-name" id="profile-name">Loading...</h1>
+                                        <p class="profile-age" id="profile-age"></p>
+                                    </div>
+                                    <button class="edit-btn" id="edit-profile-btn" title="Edit Profile">✏️</button>
+                                </div>
+
+                                <p class="profile-bio" id="profile-bio">This is my bio...</p>
+
+                                <!-- Stats -->
+                                <div class="profile-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="stat-events">0</span>
+                                        <span class="stat-label">Events</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="stat-followers">0</span>
+                                        <span class="stat-label">Followers</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-number" id="stat-following">0</span>
+                                        <span class="stat-label">Following</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Modal for viewing full-size images -->
+                <div class="photo-modal" id="photo-modal" onclick="this.style.display='none'">
+                    <div class="photo-modal-content">
+                        <img id="modal-photo" src="" alt="Profile photo">
+                    </div>
+                </div>
+
+                <!-- Edit Profile Modal -->
+                <div class="edit-profile-modal" id="edit-profile-modal">
+                    <div class="edit-modal-content">
+                        <div class="edit-modal-header">
+                            <h2 class="edit-modal-title">Edit Profile</h2>
+                            <button class="edit-close-btn" id="close-edit-modal">&times;</button>
+                        </div>
+
+                        <form class="edit-form" id="edit-profile-form">
+                            <!-- Basic Info -->
+                            <div class="form-group">
+                                <label class="form-label">👤 Full Name</label>
+                                <input type="text" class="form-input" id="edit-name" placeholder="Your full name">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">📅 Birthdate</label>
+                                <input type="date" class="form-input" id="edit-birthdate">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">📝 Bio</label>
+                                <textarea class="form-input form-textarea" id="edit-bio" placeholder="Tell people about yourself..."></textarea>
+                            </div>
+
+                            <!-- Photos Section -->
+                            <div class="photos-section">
+                                <label class="form-label">📸 Photos (Drag to reorder)</label>
+                                <div class="photos-grid" id="edit-photos-grid">
+                                    <!-- Photo slots will be populated by JavaScript -->
+                                </div>
+                                <input type="file" id="photo-upload-input" class="photo-upload-input" accept="image/*" multiple>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="edit-actions">
+                                <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+                                <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- EDIT PROFILE MODAL -->
+                <div id="edit-profile-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; overflow-y: auto; padding: 2rem;">
+                    <div style="background: #ffffff; padding: 3rem; border-radius: 16px; max-width: 550px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin: 0 auto;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <h2 style="font-size: 1.8rem; font-weight: 700; color: #1f2937; margin: 0;">✏️ Edit Your Profile</h2>
+                            <button id="close-edit-modal" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s ease; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#374151'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">✕</button>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <h2 style="font-size: 1.8rem; font-weight: 700; color: #1f2937; margin: 0;">✏️ Edit Your Profile</h2>
+                            <button id="close-edit-modal" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: all 0.2s ease; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#374151'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">✕</button>
+                        </div>
+                        
+                        <form id="edit-profile-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.95rem;">👤 Full Name</label>
+                                <input type="text" id="edit-name" placeholder="Your full name" style="width: 100%; padding: 0.875rem 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; color: #111827; font-family: inherit; font-size: 1rem; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.95rem;">📧 Email Address</label>
+                                <input type="email" id="edit-email" placeholder="your@email.com" style="width: 100%; padding: 0.875rem 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; color: #111827; font-family: inherit; font-size: 1rem; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.95rem;">📍 Location Settings</label>
+                                <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
+                                    <input type="text" id="edit-location-address" placeholder="Enter your full address (kept private)" style="width: 100%; padding: 0.75rem 1rem; background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; font-family: inherit; margin-bottom: 0.75rem; font-size: 0.9rem;">
+                                    <button type="button" id="set-location-btn" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #a855f7, #9333ea); border: none; color: #ffffff; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.75rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(168, 85, 247, 0.3)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">📍 Use Current Location</button>
+                                    <div id="location-map" style="width: 100%; height: 200px; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 8px; margin-bottom: 0.75rem;"></div>
+                                    <small style="color: #64748b; display: block; margin-bottom: 0.75rem; font-size: 0.8rem;">💡 Click on the map to place a marker, or drag existing marker to adjust location</small>
+                                    <input type="text" id="edit-location-display" placeholder="Public display (City, Country)" style="width: 100%; padding: 0.75rem 1rem; background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; font-family: inherit; font-size: 0.9rem;">
+                                    <small style="color: #64748b; display: block; margin-top: 0.5rem; font-size: 0.8rem;">🔒 Your full address is kept private. Only the city/country you specify will be shown publicly.</small>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.95rem;">📝 About You</label>
+                                <textarea id="edit-bio" placeholder="Tell us about yourself..." style="width: 100%; padding: 0.875rem 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; color: #111827; font-family: inherit; min-height: 120px; resize: vertical; font-size: 1rem; transition: all 0.2s ease;" onfocus="this.style.borderColor='#a855f7'; this.style.boxShadow='0 0 0 3px rgba(168, 85, 247, 0.1)'" onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                                <button type="submit" id="save-profile-btn" style="flex: 1; padding: 1rem; background: linear-gradient(135deg, #a855f7, #9333ea); color: #ffffff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(168, 85, 247, 0.4)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">💾 Save Changes</button>
+                                <button type="button" id="cancel-edit-btn" style="flex: 1; padding: 1rem; background: #f3f4f6; color: #374151; border: 2px solid #d1d5db; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s ease;" onmouseover="this.style.background='#e5e7eb'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='#f3f4f6'; this.style.borderColor='#d1d5db'">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="bottom-nav">
+                <a href="#" class="nav-item active" data-page="grid-page" onclick="console.log('Grid clicked'); window.app?.navigateTo('grid-page'); event.preventDefault();">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">Events</span>
+                </a>
+                <a href="#" class="nav-item" data-page="map-page" onclick="console.log('Map clicked'); window.app?.navigateTo('map-page'); event.preventDefault();">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-label">Map</span>
+                </a>
+                <a href="#" class="nav-item" data-page="create-page" onclick="console.log('Create clicked'); window.app?.navigateTo('create-page'); event.preventDefault();">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-label">Create</span>
+                </a>
+                <a href="#" class="nav-item" data-page="profile-page" onclick="console.log('Profile clicked'); window.app?.navigateTo('profile-page'); event.preventDefault();">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Profile</span>
+                </a>
+            </nav>
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
+    <script>
+        // ============== REALTIME LOGGING SYSTEM ==============
+        
+        class RealtimeLogger {
+            constructor() {
+                this.logs = [];
+                this.maxLogs = 1000;
+                this.sessionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                this.userId = 'anonymous';
+                this.init();
+            }
+            
+            init() {
+                console.log('🔍 RealtimeLogger initialized - Session:', this.sessionId);
+                this.log('system', 'RealtimeLogger started', { sessionId: this.sessionId });
+                
+                // Capture all user interactions
+                this.captureUserInteractions();
+                
+                // Capture page events
+                this.capturePageEvents();
+                
+                // Capture errors
+                this.captureErrors();
+                
+                // Capture AJAX requests
+                this.captureAjaxRequests();
+                
+                // Start performance monitoring
+                this.startPerformanceMonitoring();
+                
+                // Log initial page state
+                this.logPageState();
+            }
+            
+            log(category, action, data = {}) {
+                const logEntry = {
+                    timestamp: new Date().toISOString(),
+                    sessionId: this.sessionId,
+                    userId: this.userId,
+                    category,
+                    action,
+                    data,
+                    url: window.location.href,
+                    userAgent: navigator.userAgent,
+                    viewport: {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    }
+                };
+                
+                this.logs.push(logEntry);
+                
+                // Keep only recent logs
+                if (this.logs.length > this.maxLogs) {
+                    this.logs = this.logs.slice(-this.maxLogs);
+                }
+                
+                // Console output with emoji indicators
+                const emoji = this.getCategoryEmoji(category);
+                console.log(`${emoji} [${category.toUpperCase()}] ${action}`, data);
+                
+                // Send to potential AI analysis endpoint (for future implementation)
+                this.sendToAIAnalysis(logEntry);
+            }
+            
+            getCategoryEmoji(category) {
+                const emojis = {
+                    'navigation': '🧭',
+                    'interaction': '👆',
+                    'error': '❌',
+                    'performance': '⚡',
+                    'ajax': '🌐',
+                    'system': '🔧',
+                    'user': '👤',
+                    'page': '📄',
+                    'form': '📝',
+                    'auth': '🔐'
+                };
+                return emojis[category] || '📋';
+            }
+            
+            captureUserInteractions() {
+                // Click events
+                document.addEventListener('click', (e) => {
+                    const target = e.target;
+                    const elementInfo = {
+                        tagName: target.tagName,
+                        id: target.id,
+                        className: target.className,
+                        text: target.textContent?.substring(0, 50),
+                        type: target.type,
+                        name: target.name
+                    };
+                    
+                    // Special handling for navigation
+                    if (target.closest('.nav-item')) {
+                        const navItem = target.closest('.nav-item');
+                        const page = navItem.getAttribute('data-page');
+                        this.log('navigation', 'nav-click', { page, elementInfo });
+                    } else if (target.id === 'login-btn' || target.id === 'logout-btn') {
+                        this.log('auth', 'auth-action', { action: target.id, elementInfo });
+                    } else if (target.tagName === 'BUTTON' || target.type === 'submit') {
+                        this.log('interaction', 'button-click', elementInfo);
+                    } else {
+                        this.log('interaction', 'click', elementInfo);
+                    }
+                });
+                
+                // Form submissions
+                document.addEventListener('submit', (e) => {
+                    const form = e.target;
+                    const formData = {};
+                    const inputs = form.querySelectorAll('input, textarea, select');
+                    inputs.forEach(input => {
+                        if (input.type === 'password') {
+                            formData[input.name || input.id] = '[PASSWORD]';
+                        } else {
+                            formData[input.name || input.id] = input.value;
+                        }
+                    });
+                    
+                    this.log('form', 'submit', {
+                        formId: form.id,
+                        action: form.action,
+                        method: form.method,
+                        fields: Object.keys(formData),
+                        hasPassword: formData.password !== undefined
+                    });
+                });
+                
+                // Input changes
+                document.addEventListener('input', (e) => {
+                    const target = e.target;
+                    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+                        this.log('interaction', 'input-change', {
+                            id: target.id,
+                            name: target.name,
+                            type: target.type,
+                            hasValue: !!target.value
+                        });
+                    }
+                });
+            }
+            
+            capturePageEvents() {
+                // Page visibility changes
+                document.addEventListener('visibilitychange', () => {
+                    this.log('page', 'visibility-change', { 
+                        hidden: document.hidden,
+                        visibilityState: document.visibilityState 
+                    });
+                });
+                
+                // Page unload
+                window.addEventListener('beforeunload', () => {
+                    this.log('page', 'unload', { sessionDuration: Date.now() - parseInt(this.sessionId.split('-')[0]) });
+                });
+                
+                // Resize events
+                window.addEventListener('resize', () => {
+                    this.log('page', 'resize', {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    });
+                });
+            }
+            
+            captureErrors() {
+                // JavaScript errors
+                window.addEventListener('error', (e) => {
+                    this.log('error', 'javascript-error', {
+                        message: e.message,
+                        filename: e.filename,
+                        lineno: e.lineno,
+                        colno: e.colno,
+                        error: e.error?.stack
+                    });
+                });
+                
+                // Unhandled promise rejections
+                window.addEventListener('unhandledrejection', (e) => {
+                    this.log('error', 'unhandled-promise-rejection', {
+                        reason: e.reason,
+                        promise: e.promise
+                    });
+                });
+            }
+            
+            captureAjaxRequests() {
+                // Monkey patch fetch for logging
+                const originalFetch = window.fetch;
+                window.fetch = async (...args) => {
+                    const startTime = performance.now();
+                    const url = args[0];
+                    const options = args[1] || {};
+                    
+                    try {
+                        const response = await originalFetch(...args);
+                        const duration = performance.now() - startTime;
+                        
+                        this.log('ajax', 'fetch-complete', {
+                            url: typeof url === 'string' ? url : url.url,
+                            method: options.method || 'GET',
+                            status: response.status,
+                            duration: Math.round(duration),
+                            success: response.ok
+                        });
+                        
+                        return response;
+                    } catch (error) {
+                        const duration = performance.now() - startTime;
+                        
+                        this.log('ajax', 'fetch-error', {
+                            url: typeof url === 'string' ? url : url.url,
+                            method: options.method || 'GET',
+                            duration: Math.round(duration),
+                            error: error.message
+                        });
+                        
+                        throw error;
+                    }
+                };
+            }
+            
+            startPerformanceMonitoring() {
+                // Monitor page load performance
+                if (performance.timing) {
+                    setTimeout(() => {
+                        const timing = performance.timing;
+                        this.log('performance', 'page-load-metrics', {
+                            domContentLoaded: timing.domContentLoadedEventEnd - timing.navigationStart,
+                            loadComplete: timing.loadEventEnd - timing.navigationStart,
+                            firstPaint: performance.getEntriesByType('paint')[0]?.startTime,
+                            largestContentfulPaint: performance.getEntriesByType('largest-contentful-paint')[0]?.startTime
+                        });
+                    }, 1000);
+                }
+                
+                // Monitor memory usage (if available)
+                if (performance.memory) {
+                    setInterval(() => {
+                        this.log('performance', 'memory-usage', {
+                            used: performance.memory.usedJSHeapSize,
+                            total: performance.memory.totalJSHeapSize,
+                            limit: performance.memory.jsHeapSizeLimit
+                        });
+                    }, 30000); // Every 30 seconds
+                }
+            }
+            
+            logPageState() {
+                this.log('page', 'initial-state', {
+                    currentPage: window.app?.currentPage,
+                    userLoggedIn: !!window.loginManager?.user,
+                    mapInitialized: window.app?.mapInitialized,
+                    eventsLoaded: window.app?.events?.length || 0,
+                    url: window.location.href
+                });
+            }
+            
+            sendToAIAnalysis(logEntry) {
+                // Future implementation: Send logs to AI analysis service
+                // For now, just store locally
+                
+                // Could send to an endpoint like:
+                // fetch('/api/logs/ai-analysis', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(logEntry)
+                // });
+            }
+            
+            getLogs(category = null, limit = 100) {
+                let filteredLogs = this.logs;
+                if (category) {
+                    filteredLogs = this.logs.filter(log => log.category === category);
+                }
+                return filteredLogs.slice(-limit);
+            }
+            
+            exportLogs() {
+                const dataStr = JSON.stringify(this.logs, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `realtime-logs-${this.sessionId}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                this.log('system', 'logs-exported', { filename: exportFileDefaultName });
+            }
+        }
+        
+        // Initialize realtime logger
+        window.realtimeLogger = new RealtimeLogger();
+        
+        // Global functions for debugging and AI analysis
+        window.getRealtimeLogs = (category = null, limit = 50) => {
+            return window.realtimeLogger?.getLogs(category, limit) || [];
+        };
+        
+        window.exportRealtimeLogs = () => {
+            window.realtimeLogger?.exportLogs();
+        };
+        
+        window.analyzeRealtimeLogs = () => {
+            const logs = window.realtimeLogger?.logs || [];
+            
+            // Simple AI-style analysis
+            const analysis = {
+                sessionDuration: Date.now() - parseInt(logs[0]?.sessionId?.split('-')[0] || Date.now()),
+                totalInteractions: logs.filter(l => l.category === 'interaction').length,
+                navigationEvents: logs.filter(l => l.category === 'navigation').length,
+                errors: logs.filter(l => l.category === 'error').length,
+                ajaxCalls: logs.filter(l => l.category === 'ajax').length,
+                performanceIssues: logs.filter(l => l.category === 'performance' && l.data.duration > 5000).length,
+                mostVisitedPages: {},
+                errorPatterns: []
+            };
+            
+            // Analyze page visits
+            logs.filter(l => l.category === 'navigation').forEach(log => {
+                analysis.mostVisitedPages[log.data.to] = (analysis.mostVisitedPages[log.data.to] || 0) + 1;
+            });
+            
+            // Analyze errors
+            const errorGroups = {};
+            logs.filter(l => l.category === 'error').forEach(log => {
+                const key = `${log.action}-${log.data?.reason || 'unknown'}`;
+                errorGroups[key] = (errorGroups[key] || 0) + 1;
+            });
+            analysis.errorPatterns = Object.entries(errorGroups).map(([pattern, count]) => ({ pattern, count }));
+            
+            console.log('🤖 AI Analysis Results:', analysis);
+            return analysis;
+        };
+        
+        // Console helpers
+        console.realtime = {
+            logs: () => window.getRealtimeLogs(),
+            errors: () => window.getRealtimeLogs('error'),
+            navigation: () => window.getRealtimeLogs('navigation'),
+            ajax: () => window.getRealtimeLogs('ajax'),
+            analyze: () => window.analyzeRealtimeLogs(),
+            export: () => window.exportRealtimeLogs(),
+            clear: () => { if (window.realtimeLogger) window.realtimeLogger.logs = []; console.log('🧹 Logs cleared'); }
+        };
+        
+        console.log('💡 Realtime logging active! Use console.realtime.* commands:');
+        console.log('   console.realtime.logs() - View all logs');
+        console.log('   console.realtime.errors() - View errors only');
+        console.log('   console.realtime.analyze() - AI analysis');
+        console.log('   console.realtime.export() - Download logs as JSON');
+        
+        class KeepUpApp {
+            constructor() {
+                this.apiBase = window.location.origin;
+                this.currentPage = 'grid-page';
+                this.events = [];
+                this.filteredEvents = [];
+                this.userProfile = null;
+                this.map = null;
+                this.markers = [];
+                this.currentRadius = 50;
+                this.mapInitialized = false;
+                this.mapLoadTimeout = null;
+                
+                // Check URL parameters for initial page
+                const urlParams = new URLSearchParams(window.location.search);
+                const pageParam = urlParams.get('page');
+                if (pageParam && ['grid-page', 'map-page', 'create-page', 'profile-page'].includes(pageParam)) {
+                    this.currentPage = pageParam;
+                }
+                
+                this.init();
+            }
+            
+            async init() {
+                console.log('🚀 Initializing KEEP-Up App...');
+                
+                // Setup basic functionality first
+                this.setupNavigation();
+                console.log('✅ Navigation setup complete');
+                
+                this.setupEventListeners();
+                console.log('✅ Event listeners setup complete');
+                
+                this.setupMapControls();
+                console.log('✅ Map controls setup complete');
+                
+                // Load data asynchronously but don't block initialization
+                this.loadEventsFromDatabase().catch(err => console.error('Events load error:', err));
+                this.loadUserProfile().catch(err => console.error('Profile load error:', err));
+                this.initMap();
+                
+                // Navigate to the initial page (from URL param or default)
+                this.navigateTo(this.currentPage);
+                
+                console.log('🎉 App initialization complete!');
+            }
+            
+            setupNavigation() {
+                console.log('Setting up navigation...');
+                const navItems = document.querySelectorAll('.nav-item');
+                console.log('Found nav items:', navItems.length);
+                
+                if (navItems.length === 0) {
+                    console.error('❌ No nav items found! Navigation setup failed.');
+                    return;
+                }
+                
+                navItems.forEach((item, index) => {
+                    const pageId = item.getAttribute('data-page');
+                    console.log(`Attaching listener ${index + 1}/${navItems.length} to:`, pageId);
+                    
+                    if (!pageId) {
+                        console.error('❌ Nav item missing data-page attribute:', item);
+                        return;
+                    }
+                    
+                    item.addEventListener('click', (e) => {
+                        console.log('✅ Navigation clicked:', pageId);
+                        e.preventDefault();
+                        this.navigateTo(pageId);
+                    });
+                    
+                    console.log(`✅ Listener attached to ${pageId}`);
+                });
+                
+                console.log('✅ Navigation setup complete');
+            }
+            
+            navigateTo(pageId) {
+                console.log('Navigating to:', pageId);
+                
+                // Log navigation
+                window.realtimeLogger?.log('navigation', 'page-change', { 
+                    from: this.currentPage, 
+                    to: pageId 
+                });
+                
+                // Clean up map when leaving map page
+                if (this.currentPage === 'map-page' && pageId !== 'map-page') {
+                    this.cleanupMap();
+                }
+                
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                
+                // Show selected page
+                const targetPage = document.getElementById(pageId);
+                console.log('Target page element:', targetPage);
+                console.log('Target page found:', !!targetPage);
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                    console.log('Added active class to:', pageId);
+                } else {
+                    console.error('Could not find page element:', pageId);
+                    window.realtimeLogger?.log('error', 'page-not-found', { pageId });
+                }
+                
+                // Update nav items
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                const targetNav = document.querySelector(`[data-page="${pageId}"]`);
+                console.log('Target nav element:', targetNav);
+                console.log('Target nav found:', !!targetNav);
+                if (targetNav) {
+                    targetNav.classList.add('active');
+                    console.log('Added active class to nav:', pageId);
+                } else {
+                    console.error('Could not find nav element:', pageId);
+                    window.realtimeLogger?.log('error', 'nav-not-found', { pageId });
+                }
+                
+                this.currentPage = pageId;
+                console.log('Current page set to:', this.currentPage);
+                
+                // Trigger page-specific logic
+                if (pageId === 'map-page') {
+                    // Only initialize map if it's not already initialized or if we're coming from a different page
+                    if (!this.mapInitialized || this.currentPage !== 'map-page') {
+                        this.mapLoadTimeout = setTimeout(() => {
+                            if (!this.mapInitialized) {
+                                console.error('Map loading timeout - showing error');
+                                const loadingEl = document.getElementById('map-loading');
+                                if (loadingEl) {
+                                    loadingEl.innerHTML = `
+                                        <div style="text-align: center;">
+                                            <div>❌ Map failed to load</div>
+                                            <div style="font-size: 0.8rem; margin: 0.5rem 0; color: #6b7280;">Check your internet connection</div>
+                                            <button style="margin-top: 1rem; padding: 0.5rem 1rem; background: #a855f7; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;" onclick="window.app.retryMapLoad()">🔄 Retry</button>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }, 30000); // 30 second timeout
+                        this.initMap();
+                    }
+                    this.updateLocationStatus();
+                    this.updateMapStats();
+                } else if (pageId === 'profile-page') {
+                    // Refresh profile data when navigating to profile page
+                    this.loadUserProfile();
+                }
+            }
+            
+            setupEventListeners() {
+                // Search
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => this.filterEvents(e.target.value));
+                }
+                
+                // Filters
+                const genreFilter = document.getElementById('genre-filter');
+                const priceFilter = document.getElementById('price-filter');
+                if (genreFilter) {
+                    genreFilter.addEventListener('change', () => this.applyFilters());
+                }
+                if (priceFilter) {
+                    priceFilter.addEventListener('change', () => this.applyFilters());
+                }
+                
+                // Create form
+                const createForm = document.getElementById('create-form');
+                if (createForm) {
+                    createForm.addEventListener('submit', (e) => this.handleCreateEvent(e));
+                }
+                
+                // Sync button
+                const syncBtn = document.getElementById('sync-btn');
+                if (syncBtn) {
+                    syncBtn.addEventListener('click', () => this.syncDatabase());
+                }
+            }
+            
+            setupMapControls() {
+                const radiusSlider = document.getElementById('radius-slider');
+                const radiusValue = document.getElementById('radius-value');
+                
+                if (radiusSlider && radiusValue) {
+                    radiusSlider.value = this.currentRadius;
+                    radiusValue.textContent = this.currentRadius + ' km';
+                    
+                    radiusSlider.addEventListener('input', (e) => {
+                        this.currentRadius = parseInt(e.target.value);
+                        radiusValue.textContent = this.currentRadius + ' km';
+                        document.getElementById('current-radius').textContent = this.currentRadius;
+                        this.updateMapEvents();
+                        this.updateMapStats();
+                    });
+                }
+            }
+            
+            async loadEventsFromDatabase() {
+                try {
+                    console.log('📊 Fetching events from database...');
+                    const response = await fetch(`${this.apiBase}/api/events/discover`);
+                    const data = await response.json();
+                    
+                    if (data.ok && data.events) {
+                        this.events = data.events;
+                        this.filteredEvents = [...this.events];
+                        this.renderEvents();
+                        console.log(`✅ Loaded ${this.events.length} events`);
+                    } else {
+                        console.warn('⚠️ No events found in database');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading events:', error);
+                }
+            }
+            
+            renderEvents() {
+                const grid = document.getElementById('events-grid');
+                if (!grid) return;
+                
+                if (this.filteredEvents.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: #999;">No events found</div>';
+                    return;
+                }
+                
+                grid.innerHTML = this.filteredEvents.map(event => `
+                    <div style="background: #ffffff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; border: 1px solid #e0e0e0;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'">
+                        <div style="background: linear-gradient(135deg, #a855f7, #9333ea); height: 120px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎵</div>
+                        <div style="padding: 1.25rem;">
+                            <h3 style="font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 1.1rem;">${event.event_name || 'Unknown Event'}</h3>
+                            <p style="color: #a855f7; font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 600;">🎤 ${event.artist_name || 'Unknown Artist'}</p>
+                            <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 0.25rem;">📍 ${event.venue_name || 'TBA'}</p>
+                            <p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 1rem;">📅 ${new Date(event.event_date).toLocaleDateString()}</p>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button style="flex: 1; padding: 0.625rem; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border: 1px solid #d1d5db; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;" onclick="window.app.saveEvent('${event.id}')" onmouseover="this.style.background='linear-gradient(135deg, #a855f7, #9333ea)'; this.style.color='#ffffff'; this.style.borderColor='#a855f7'" onmouseout="this.style.background='linear-gradient(135deg, #f3f4f6, #e5e7eb)'; this.style.color='#374151'; this.style.borderColor='#d1d5db'">♥️ Save</button>
+                                ${event.ticket_url ? `<a href="${event.ticket_url}" target="_blank" style="flex: 1; padding: 0.625rem; background: linear-gradient(135deg, #a855f7, #9333ea); border: none; color: #ffffff; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; text-align: center; font-size: 0.85rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(168, 85, 247, 0.3)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">🎫 Tickets</a>` : '<button style="flex: 1; padding: 0.625rem; background: #f3f4f6; border: 1px solid #d1d5db; color: #9ca3af; border-radius: 6px; cursor: not-allowed; font-size: 0.85rem;">TBA</button>'}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add grid styling
+                grid.style.display = 'grid';
+                grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+                grid.style.gap = '1rem';
+                grid.style.padding = '1rem';
+            }
+            
+            filterEvents(query) {
+                this.filteredEvents = this.events.filter(e => {
+                    const search = query.toLowerCase();
+                    return (e.event_name?.toLowerCase().includes(search) ||
+                            e.artist_name?.toLowerCase().includes(search) ||
+                            e.venue_name?.toLowerCase().includes(search));
+                });
+                this.renderEvents();
+            }
+            
+            applyFilters() {
+                const genre = document.getElementById('genre-filter')?.value || '';
+                const maxPrice = parseFloat(document.getElementById('price-filter')?.value) || Infinity;
+                
+                this.filteredEvents = this.events.filter(e => {
+                    const matchGenre = !genre || e.genres?.toLowerCase().includes(genre);
+                    const matchPrice = !e.ticket_price || parseFloat(e.ticket_price) <= maxPrice;
+                    return matchGenre && matchPrice;
+                });
+                this.renderEvents();
+            }
+            
+            async handleCreateEvent(e) {
+                e.preventDefault();
+                const data = {
+                    event_name: document.getElementById('event-name').value,
+                    artist_name: document.getElementById('event-artist').value,
+                    event_date: document.getElementById('event-date').value,
+                    venue_name: document.getElementById('event-venue').value,
+                    ticket_url: document.getElementById('event-ticket-url').value,
+                    source: 'user-created'
+                };
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/api/events/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (result.ok) {
+                        alert('✅ Event created successfully!');
+                        e.target.reset();
+                        await this.loadEventsFromDatabase();
+                    }
+                } catch (error) {
+                    alert('❌ Error creating event: ' + error.message);
+                }
+            }
+            
+            async loadUserProfile() {
+                console.log('🔍 loadUserProfile called');
+                console.log('window.loginManager:', window.loginManager);
+                console.log('window.loginManager.user:', window.loginManager?.user);
+                
+                // Load profile from stored user data if logged in
+                if (window.loginManager && window.loginManager.user) {
+                    console.log('✅ User is logged in, loading profile data');
+                    // Parse location and bio from Joomla params
+                    let params = {};
+                    try {
+                        if (window.loginManager.user.params && typeof window.loginManager.user.params === 'string') {
+                            params = JSON.parse(window.loginManager.user.params);
+                            console.log('Parsed params:', params);
+                        }
+                    } catch (e) {
+                        console.log('Could not parse params:', e);
+                    }
+                    
+                    this.userProfile = {
+                        id: window.loginManager.user.id,
+                        username: window.loginManager.user.username,
+                        name: window.loginManager.user.name || window.loginManager.user.username || 'User',
+                        email: window.loginManager.user.email || '',
+                        birthdate: params.birthdate || '',
+                        bio: params.bio || '',
+                        photos: params.photos || []
+                    };
+                    console.log('Set userProfile to:', this.userProfile);
+                } else {
+                    console.log('❌ No user logged in, showing guest profile');
+                    // Default profile for guest
+                    this.userProfile = {
+                        name: 'Guest User',
+                        email: 'not@loggedin.com',
+                        location: '',
+                        bio: ''
+                    };
+                }
+                
+                this.updateProfileDisplay();
+                this.setupProfileEventListeners();
+            }
+            
+            updateProfileDisplay() {
+                // Update name and age
+                const nameEl = document.getElementById('profile-name');
+                const ageEl = document.getElementById('profile-age');
+                const bioEl = document.getElementById('profile-bio');
+                
+                if (nameEl) nameEl.textContent = this.userProfile.name || 'Loading...';
+                if (ageEl) {
+                    const age = calculateAge(this.userProfile.birthdate);
+                    ageEl.textContent = age ? `${age} years old` : '';
+                }
+                if (bioEl) bioEl.textContent = this.userProfile.bio || 'This is my bio...';
+                
+                // Update photos
+                const photos = this.userProfile.photos || [];
+                renderPhotoCarousel(photos);
+                
+                // Update stats (placeholder for now)
+                const eventsEl = document.getElementById('stat-events');
+                const followersEl = document.getElementById('stat-followers');
+                const followingEl = document.getElementById('stat-following');
+                
+                if (eventsEl) eventsEl.textContent = '0';
+                if (followersEl) followersEl.textContent = '0';
+                if (followingEl) followingEl.textContent = '0';
+                
+                // Populate edit form
+                const editName = document.getElementById('edit-name');
+                const editBirthdate = document.getElementById('edit-birthdate');
+                const editBio = document.getElementById('edit-bio');
+                
+                if (editName) editName.value = this.userProfile.name || '';
+                if (editBirthdate) editBirthdate.value = this.userProfile.birthdate || '';
+                if (editBio) editBio.value = this.userProfile.bio || '';
+                
+                // Setup photo editing
+                this.setupPhotoEditing();
+            }
+            
+            setupPhotoEditing() {
+                const photosGrid = document.getElementById('edit-photos-grid');
+                const uploadInput = document.getElementById('photo-upload-input');
+                
+                if (!photosGrid) return;
+                
+                // Clear existing slots
+                photosGrid.innerHTML = '';
+                
+                // Create 9 photo slots
+                for (let i = 0; i < 9; i++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'photo-upload-slot';
+                    slot.dataset.index = i;
+                    
+                    if (this.userProfile.photos && this.userProfile.photos[i]) {
+                        slot.innerHTML = `
+                            <img src="${this.userProfile.photos[i]}" alt="Photo ${i + 1}">
+                            <button class="drag-handle" title="Drag to reorder">⋮⋮</button>
+                        `;
+                        slot.classList.remove('empty');
+                    } else {
+                        slot.innerHTML = '<span>+</span>';
+                        slot.classList.add('empty');
+                    }
+                    
+                    slot.onclick = () => {
+                        if (uploadInput) uploadInput.click();
+                    };
+                    
+                    photosGrid.appendChild(slot);
+                }
+                
+                // Setup drag and drop
+                this.setupDragAndDrop();
+                
+                // Setup file upload
+                if (uploadInput) {
+                    uploadInput.onchange = (e) => this.handlePhotoUpload(e.target.files);
+                }
+            }
+            
+            setupDragAndDrop() {
+                const slots = document.querySelectorAll('.photo-upload-slot');
+                let draggedElement = null;
+                
+                slots.forEach(slot => {
+                    slot.draggable = true;
+                    
+                    slot.ondragstart = (e) => {
+                        draggedElement = slot;
+                        e.dataTransfer.effectAllowed = 'move';
+                        slot.style.opacity = '0.5';
+                    };
+                    
+                    slot.ondragend = (e) => {
+                        slot.style.opacity = '1';
+                    };
+                    
+                    slot.ondragover = (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                    };
+                    
+                    slot.ondrop = (e) => {
+                        e.preventDefault();
+                        if (draggedElement && draggedElement !== slot) {
+                            this.swapPhotos(draggedElement.dataset.index, slot.dataset.index);
+                        }
+                    };
+                });
+            }
+            
+            swapPhotos(fromIndex, toIndex) {
+                const photos = [...(this.userProfile.photos || [])];
+                [photos[fromIndex], photos[toIndex]] = [photos[toIndex], photos[fromIndex]];
+                this.userProfile.photos = photos;
+                this.setupPhotoEditing();
+            }
+            
+            async handlePhotoUpload(files) {
+                for (const file of files) {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const photos = [...(this.userProfile.photos || [])];
+                            // Find first empty slot
+                            const emptyIndex = photos.findIndex(photo => !photo);
+                            if (emptyIndex === -1 && photos.length < 9) {
+                                photos.push(e.target.result);
+                            } else if (emptyIndex !== -1) {
+                                photos[emptyIndex] = e.target.result;
+                            }
+                            this.userProfile.photos = photos;
+                            this.setupPhotoEditing();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+            
+            setupProfileEventListeners() {
+                const editBtn = document.getElementById('edit-profile-btn');
+                const editModal = document.getElementById('edit-profile-modal');
+                const closeBtn = document.getElementById('close-edit-modal');
+                const cancelBtn = document.getElementById('cancel-edit-btn');
+                const saveBtn = document.getElementById('save-profile-btn');
+                const form = document.getElementById('edit-profile-form');
+                const logoutBtn = document.getElementById('logout-btn');
+                
+                if (editBtn) {
+                    editBtn.onclick = () => {
+                        this.updateProfileDisplay();
+                        if (editModal) editModal.style.display = 'block';
+                    };
+                }
+                
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        if (editModal) editModal.style.display = 'none';
+                    };
+                }
+                
+                if (cancelBtn) {
+                    cancelBtn.onclick = () => {
+                        if (editModal) editModal.style.display = 'none';
+                    };
+                }
+                
+                if (form) {
+                    form.onsubmit = async (e) => {
+                        e.preventDefault();
+                        await this.saveProfile();
+                    };
+                }
+                
+                if (logoutBtn) {
+                    logoutBtn.onclick = () => {
+                        this.loginManager.logout();
+                    };
+                }
+                
+                // Close modal when clicking outside
+                if (editModal) {
+                    editModal.onclick = (e) => {
+                        if (e.target === editModal) {
+                            editModal.style.display = 'none';
+                        }
+                    };
+                }
+                
+                // Initialize location map when modal opens
+                if (editBtn) {
+                    const originalOnClick = editBtn.onclick;
+                    editBtn.onclick = () => {
+                        originalOnClick();
+                        setTimeout(() => this.initLocationMap(), 100);
+                    };
+                }
+                
+                // Handle set location button
+                const setLocationBtn = document.getElementById('set-location-btn');
+                if (setLocationBtn) {
+                    setLocationBtn.onclick = () => this.setCurrentLocation();
+                }
+            }
+            
+            async saveProfile() {
+                const editName = document.getElementById('edit-name');
+                const editBirthdate = document.getElementById('edit-birthdate');
+                const editBio = document.getElementById('edit-bio');
+                
+                if (!window.loginManager || !window.loginManager.user) {
+                    alert('❌ You must be logged in to save profile');
+                    return;
+                }
+                
+                const profileData = {
+                    username: window.loginManager.user.username,
+                    name: editName?.value || this.userProfile.name,
+                    birthdate: editBirthdate?.value || '',
+                    bio: editBio?.value || '',
+                    photos: this.userProfile.photos || []
+                };
+                
+                try {
+                    const response = await fetch('/api/user/profile/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(profileData),
+                        credentials: 'include'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.ok) {
+                        // Update local user profile
+                        this.userProfile = { ...this.userProfile, ...profileData };
+                        
+                        // Update loginManager user
+                        if (window.loginManager.user) {
+                            window.loginManager.user.name = profileData.name;
+                            // Update params in user object
+                            const params = {
+                                birthdate: profileData.birthdate,
+                                bio: profileData.bio,
+                                photos: profileData.photos
+                            };
+                            window.loginManager.user.params = JSON.stringify(params);
+                        }
+                        
+                        this.updateProfileDisplay();
+                        
+                        const editModal = document.getElementById('edit-profile-modal');
+                        if (editModal) editModal.style.display = 'none';
+                        
+                        alert('✅ Profile updated successfully!');
+                    } else {
+                        alert('❌ Error saving profile: ' + (data.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    console.error('Profile save error:', err);
+                    alert('❌ Error saving profile: ' + err.message);
+                }
+            }
+            
+            initLocationMap() {
+                const mapContainer = document.getElementById('location-map');
+                if (!mapContainer || !window.L) return;
+                
+                // Clear any existing map
+                if (this.locationMap) {
+                    this.locationMap.remove();
+                }
+                
+                // Create mini map
+                this.locationMap = L.map('location-map').setView([-30.0346, -51.2177], 10); // Porto Alegre, Brazil
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18
+                }).addTo(this.locationMap);
+                
+                // Add draggable marker if we have coordinates
+                if (this.userProfile.lat && this.userProfile.lng) {
+                    this.locationMarker = L.marker([this.userProfile.lat, this.userProfile.lng], {
+                        draggable: true
+                    }).addTo(this.locationMap);
+                    
+                    this.locationMap.setView([this.userProfile.lat, this.userProfile.lng], 15);
+                    
+                    // Handle marker drag
+                    this.locationMarker.on('dragend', (e) => {
+                        const marker = e.target;
+                        const position = marker.getLatLng();
+                        this.userProfile.lat = position.lat;
+                        this.userProfile.lng = position.lng;
+                        console.log('Marker moved to:', position.lat, position.lng);
+                        
+                        // Try to reverse geocode the new position
+                        this.reverseGeocode(position.lat, position.lng);
+                    });
+                }
+                
+                // Handle map clicks to place marker
+                this.locationMap.on('click', (e) => {
+                    const { lat, lng } = e.latlng;
+                    
+                    // Remove existing marker if any
+                    if (this.locationMarker) {
+                        this.locationMap.removeLayer(this.locationMarker);
+                    }
+                    
+                    // Add new draggable marker
+                    this.locationMarker = L.marker([lat, lng], {
+                        draggable: true
+                    }).addTo(this.locationMap);
+                    
+                    // Update user profile coordinates
+                    this.userProfile.lat = lat;
+                    this.userProfile.lng = lng;
+                    
+                    // Handle marker drag
+                    this.locationMarker.on('dragend', (e) => {
+                        const marker = e.target;
+                        const position = marker.getLatLng();
+                        this.userProfile.lat = position.lat;
+                        this.userProfile.lng = position.lng;
+                        console.log('Marker moved to:', position.lat, position.lng);
+                        
+                        // Try to reverse geocode the new position
+                        this.reverseGeocode(position.lat, position.lng);
+                    });
+                    
+                    // Reverse geocode the clicked position
+                    this.reverseGeocode(lat, lng);
+                });
+            }
+            
+            async setCurrentLocation() {
+                const setLocationBtn = document.getElementById('set-location-btn');
+                const editLocationAddress = document.getElementById('edit-location-address');
+                
+                if (!navigator.geolocation) {
+                    alert('❌ Geolocation is not supported by this browser');
+                    return;
+                }
+                
+                setLocationBtn.textContent = '⏳ Getting location...';
+                setLocationBtn.disabled = true;
+                
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 300000
+                        });
+                    });
+                    
+                    const { latitude, longitude } = position.coords;
+                    
+                    // Update map
+                    if (this.locationMap) {
+                        this.locationMap.setView([latitude, longitude], 15);
+                        
+                        // Remove existing marker if any
+                        if (this.locationMarker) {
+                            this.locationMap.removeLayer(this.locationMarker);
+                        }
+                        
+                        // Add draggable marker
+                        this.locationMarker = L.marker([latitude, longitude], {
+                            draggable: true
+                        }).addTo(this.locationMap);
+                        
+                        // Handle marker drag
+                        this.locationMarker.on('dragend', (e) => {
+                            const marker = e.target;
+                            const position = marker.getLatLng();
+                            this.userProfile.lat = position.lat;
+                            this.userProfile.lng = position.lng;
+                            console.log('Marker moved to:', position.lat, position.lng);
+                            
+                            // Try to reverse geocode the new position
+                            this.reverseGeocode(position.lat, position.lng);
+                        });
+                    }
+                    
+                    // Store coordinates
+                    this.userProfile.lat = latitude;
+                    this.userProfile.lng = longitude;
+                    
+                    // Try to reverse geocode to get address
+                    this.reverseGeocode(latitude, longitude);
+                    
+                    setLocationBtn.textContent = '✅ Location set!';
+                    setTimeout(() => {
+                        setLocationBtn.textContent = '📍 Use Current Location';
+                        setLocationBtn.disabled = false;
+                    }, 2000);
+                    
+                } catch (err) {
+                    console.error('Location error:', err);
+                    alert('❌ Could not get your location. Please check your browser permissions.');
+                    setLocationBtn.textContent = '📍 Use Current Location';
+                    setLocationBtn.disabled = false;
+                }
+            }
+            
+            async reverseGeocode(lat, lng) {
+                const editLocationAddress = document.getElementById('edit-location-address');
+                
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`);
+                    const data = await response.json();
+                    
+                    if (data && data.display_name) {
+                        if (editLocationAddress) {
+                            editLocationAddress.value = data.display_name;
+                        }
+                    }
+                } catch (geocodeErr) {
+                    console.log('Could not reverse geocode:', geocodeErr);
+                }
+            }
+            
+            initMap() {
+                if (this.mapInitialized) {
+                    console.log('Map already initialized, skipping');
+                    window.realtimeLogger?.log('system', 'map-init-skipped', { reason: 'already-initialized' });
+                    return;
+                }
+                
+                console.log('Starting map initialization...');
+                window.realtimeLogger?.log('system', 'map-init-start');
+                
+                // Initialize immediately without delay
+                const mapContainer = document.getElementById('map-container');
+                const mapDiv = document.getElementById('map');
+                
+                console.log('Map container found:', !!mapContainer);
+                console.log('Map div found:', !!mapDiv);
+                console.log('Leaflet available:', !!window.L);
+                
+                if (!mapContainer || !mapDiv) {
+                    console.error('Map initialization failed - missing DOM elements');
+                    window.realtimeLogger?.log('error', 'map-init-failed', { reason: 'missing-dom-elements' });
+                    return;
+                }
+                
+                if (!window.L) {
+                    console.error('Leaflet not loaded, retrying in 1 second...');
+                    window.realtimeLogger?.log('error', 'leaflet-not-loaded', { willRetry: true });
+                    setTimeout(() => {
+                        if (!this.mapInitialized) {
+                            console.log('Retrying map initialization...');
+                            this.initMap();
+                        }
+                    }, 1000);
+                    return;
+                }
+                
+                // Clear any existing map instance
+                if (this.map) {
+                    console.log('Removing existing map instance');
+                    this.map.remove();
+                    this.map = null;
+                }
+                
+                // Ensure container is visible and has size
+                mapContainer.style.display = 'block';
+                mapDiv.style.width = '100%';
+                mapDiv.style.height = '100%';
+                
+                console.log('Map container dimensions:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+                
+                // Keep loading overlay visible during tile loading
+                const loadingEl = document.getElementById('map-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'flex';
+                    console.log('Loading overlay shown');
+                }
+                
+                // Get user's location for map center
+                let centerLat = 0;
+                let centerLng = 0;
+                let zoomLevel = 2;
+                
+                console.log('Initializing map with userProfile:', this.userProfile);
+                if (this.userProfile && this.userProfile.lat && this.userProfile.lng) {
+                    centerLat = this.userProfile.lat;
+                    centerLng = this.userProfile.lng;
+                    zoomLevel = 10;
+                    console.log('Centering map on user location:', centerLat, centerLng);
+                } else {
+                    console.log('No user location found, centering on world view');
+                }
+                
+                try {
+                    console.log('Creating Leaflet map...');
+                    this.map = L.map('map', {
+                        worldCopyJump: true, // Enable horizontal world wrapping
+                        continuousWorld: true, // Allow continuous panning
+                        maxBounds: [
+                            [-85, -Infinity], // Southwest corner (allow infinite horizontal)
+                            [85, Infinity]    // Northeast corner (allow infinite horizontal)
+                        ],
+                        maxBoundsViscosity: 0.5, // Allow some over-pan but bounce back
+                        minZoom: 1, // Prevent zooming out too far
+                        maxZoom: 19,
+                        zoomControl: true,
+                        fadeAnimation: true, // Enable fade animations for smoother loading
+                        zoomAnimation: true, // Enable zoom animations
+                        markerZoomAnimation: true // Enable marker zoom animations
+                    }).setView([centerLat, centerLng], zoomLevel);
+                    
+                    // Optimized tile layer with subdomains for parallel loading
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        subdomains: ['a', 'b', 'c'], // Use multiple subdomains for parallel loading
+                        maxZoom: 19,
+                        noWrap: false, // Allow tile wrapping
+                        updateWhenIdle: false, // Load tiles immediately, not when idle
+                        updateWhenZooming: false, // Load tiles during zoom for smoother experience
+                        keepBuffer: 2 // Keep 2 extra levels of tiles in memory for smoother panning
+                    }).addTo(this.map);
+                    
+                    // Preload tiles around the initial view for faster perceived loading
+                    setTimeout(() => {
+                        if (this.map) {
+                            console.log('Preloading tiles around initial view');
+                            this.map.invalidateSize(); // Force tile loading
+                        }
+                    }, 100);
+                    
+                    // Fallback: hide loading overlay after 3 seconds even if tilesloaded doesn't fire
+                    setTimeout(() => {
+                        if (!this.mapInitialized) {
+                            console.log('Fallback: hiding loading overlay after timeout');
+                            const loadingEl = document.getElementById('map-loading');
+                            if (loadingEl) {
+                                loadingEl.style.display = 'none';
+                            }
+                            this.updateLocationStatus();
+                            this.updateMapEvents();
+                            this.updateMapStats();
+                            this.mapInitialized = true;
+                        }
+                    }, 3000);
+                    
+                    // Hide loading overlay when tiles are loaded
+                    this.map.on('tilesloaded', () => {
+                        console.log('Map tiles loaded, hiding loading overlay');
+                        const loadingEl = document.getElementById('map-loading');
+                        if (loadingEl) {
+                            loadingEl.style.display = 'none';
+                        }
+                        
+                        // Now load events after tiles are ready for better performance
+                        this.updateLocationStatus();
+                        this.updateMapEvents();
+                        this.updateMapStats();
+                    });
+                    
+                    console.log('Map created successfully');
+                    
+                    // Clear loading timeout
+                    if (this.mapLoadTimeout) {
+                        clearTimeout(this.mapLoadTimeout);
+                        this.mapLoadTimeout = null;
+                    }
+                    
+                    this.mapInitialized = true;
+                    console.log('Map initialization complete');
+                    window.realtimeLogger?.log('system', 'map-init-complete', { 
+                        userLocation: !!this.userProfile?.lat,
+                        eventsLoaded: this.events?.length || 0 
+                    });
+                    
+                } catch (error) {
+                    console.error('Error creating map:', error);
+                    // Hide loading on error
+                    if (loadingEl) {
+                        loadingEl.style.display = 'none';
+                    }
+                }
+            }
+            
+            cleanupMap() {
+                console.log('Cleaning up map...');
+                
+                // Clear loading timeout
+                if (this.mapLoadTimeout) {
+                    clearTimeout(this.mapLoadTimeout);
+                    this.mapLoadTimeout = null;
+                }
+                
+                // Remove all markers
+                if (this.markers && this.markers.length > 0) {
+                    this.markers.forEach(marker => {
+                        if (this.map && this.map.hasLayer(marker)) {
+                            this.map.removeLayer(marker);
+                        }
+                    });
+                    this.markers = [];
+                }
+                
+                // Remove map instance
+                if (this.map) {
+                    console.log('Removing map instance');
+                    this.map.remove();
+                    this.map = null;
+                }
+                
+                // Reset initialization flag
+                this.mapInitialized = false;
+                
+                // Show loading overlay again
+                const loadingEl = document.getElementById('map-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'flex';
+                }
+                
+                console.log('Map cleanup complete');
+            }
+            
+            retryMapLoad() {
+                console.log('Retrying map load...');
+                
+                // Reset state
+                this.mapInitialized = false;
+                if (this.mapLoadTimeout) {
+                    clearTimeout(this.mapLoadTimeout);
+                    this.mapLoadTimeout = null;
+                }
+                
+                // Reset loading overlay
+                const loadingEl = document.getElementById('map-loading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<div>🗺️ Loading map...</div>';
+                    loadingEl.style.display = 'flex';
+                }
+                
+                // Retry initialization
+                this.initMap();
+            }
+            
+            async saveEvent(eventId) {
+                console.log('Saved event:', eventId);
+                alert('Event saved to watchlist!');
+            }
+            
+            async syncDatabase() {
+                console.log('🔄 Syncing with database...');
+                const btn = document.getElementById('sync-btn');
+                btn.textContent = '⏳ Syncing...';
+                await this.loadEventsFromDatabase();
+                btn.textContent = '✅ Synced!';
+                setTimeout(() => { btn.textContent = '🔄 Sync'; }, 2000);
+            }
+            
+            updateLocationStatus() {
+                const statusEl = document.getElementById('location-status');
+                if (!statusEl) return;
+                
+                if (this.userProfile && this.userProfile.lat && this.userProfile.lng) {
+                    statusEl.textContent = `📍 Showing events within ${this.currentRadius}km of your location`;
+                    statusEl.className = 'status-indicator status-success';
+                } else {
+                    statusEl.textContent = '📍 Set your location in profile to see events near you';
+                    statusEl.className = 'status-indicator status-warning';
+                }
+            }
+            
+            updateMapEvents() {
+                if (!this.map) return;
+                
+                // Clear existing markers
+                this.markers.forEach(marker => this.map.removeLayer(marker));
+                this.markers = [];
+                
+                // Check if user is "testfriend" - they can see all events globally
+                const isTestFriend = this.userProfile && this.userProfile.username === 'testfriend';
+                
+                let eventsToShow = [];
+                
+                if (isTestFriend) {
+                    // Show all events for testfriend
+                    eventsToShow = this.events.filter(event => event.venue_latitude && event.venue_longitude);
+                } else {
+                    // For regular users, filter by radius
+                    if (!this.userProfile || !this.userProfile.lat || !this.userProfile.lng) {
+                        return;
+                    }
+                    
+                    const userLat = this.userProfile.lat;
+                    const userLng = this.userProfile.lng;
+                    
+                    eventsToShow = this.events.filter(event => {
+                        if (!event.venue_latitude || !event.venue_longitude) return false;
+                        const distance = this.calculateDistance(
+                            userLat, userLng,
+                            event.venue_latitude, event.venue_longitude
+                        );
+                        return distance <= this.currentRadius;
+                    });
+                }
+                
+                // Limit markers for performance (show max 200 markers)
+                if (eventsToShow.length > 200) {
+                    eventsToShow = eventsToShow.slice(0, 200);
+                }
+                
+                // Add markers in batches for better performance
+                this.addMarkersInBatches(eventsToShow, isTestFriend);
+            }
+            
+            addMarkersInBatches(events, isTestFriend) {
+                const batchSize = 50; // Add 50 markers at a time
+                let index = 0;
+                
+                const addBatch = () => {
+                    const batch = events.slice(index, index + batchSize);
+                    index += batchSize;
+                    
+                    batch.forEach(event => {
+                        const marker = L.circleMarker([event.venue_latitude, event.venue_longitude], {
+                            radius: 8,
+                            fillColor: isTestFriend ? '#ff6b6b' : '#00d4ff',
+                            color: isTestFriend ? '#ff5252' : '#0099ff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                        
+                        const distance = isTestFriend ? null : this.calculateDistance(
+                            this.userProfile.lat, this.userProfile.lng,
+                            event.venue_latitude, event.venue_longitude
+                        );
+                        
+                        const popupContent = `<b>${event.event_name}</b><br>${event.artist_name}<br>${event.venue_name}`;
+                        if (distance !== null) {
+                            popupContent += `<br><small>📍 ${Math.round(distance)}km away</small>`;
+                        } else {
+                            popupContent += `<br><small>🌍 Global Test View</small>`;
+                        }
+                        
+                        marker.bindPopup(popupContent).addTo(this.map);
+                        this.markers.push(marker);
+                    });
+                    
+                    // Continue with next batch if there are more events
+                    if (index < events.length) {
+                        requestAnimationFrame(addBatch);
+                    }
+                };
+                
+                // Start adding markers
+                if (events.length > 0) {
+                    requestAnimationFrame(addBatch);
+                }
+            }
+            
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371; // Earth's radius in kilometers
+                const dLat = this.toRadians(lat2 - lat1);
+                const dLng = this.toRadians(lng2 - lng1);
+                
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                         Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+                         Math.sin(dLng/2) * Math.sin(dLng/2);
+                
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const distance = R * c;
+                
+                return distance;
+            }
+            
+            toRadians(degrees) {
+                return degrees * (Math.PI / 180);
+            }
+            
+            updateMapStats() {
+                const totalEl = document.getElementById('total-events');
+                const visibleEl = document.getElementById('visible-events');
+                const radiusEl = document.getElementById('current-radius');
+                
+                if (totalEl) totalEl.textContent = this.events.length;
+                if (visibleEl) visibleEl.textContent = this.markers.length;
+                if (radiusEl) radiusEl.textContent = this.currentRadius;
+            }
+        }
+        
+        // Login Modal Management
+        class LoginManager {
+            constructor() {
+                window.realtimeLogger?.log('auth', 'login-manager-init', {});
+                
+                this.modal = null;
+                this.user = null;
+                this.sessionKey = 'keepup_user_session';
+                this.sessionExpiryKey = 'keepup_session_expiry';
+                this.setupListeners();
+                this.checkPersistentSession();
+            }
+            
+            // Check for persistent session in cookies
+            async checkPersistentSession() {
+                try {
+                    const storedSession = this.getCookie(this.sessionKey);
+                    const sessionExpiry = this.getCookie(this.sessionExpiryKey);
+                    
+                    window.realtimeLogger?.log('auth', 'check-persistent-session', { 
+                        hasStoredSession: !!storedSession,
+                        hasExpiry: !!sessionExpiry 
+                    });
+                    
+                    // Check if session exists and hasn't expired
+                    if (storedSession && sessionExpiry) {
+                        const expiryTime = parseInt(sessionExpiry);
+                        const now = Date.now();
+                        
+                        if (now < expiryTime) {
+                            // Session is still valid, validate with server
+                            const sessionData = JSON.parse(storedSession);
+                            window.realtimeLogger?.log('auth', 'persistent-session-valid', { 
+                                username: sessionData.username,
+                                timeUntilExpiry: Math.round((expiryTime - now) / 1000 / 60) + ' minutes' 
+                            });
+                            
+                            await this.validateStoredSession(sessionData);
+                        } else {
+                            // Session expired, clean up
+                            window.realtimeLogger?.log('auth', 'persistent-session-expired', {});
+                            this.clearStoredSession();
+                            this.showLoginPrompt();
+                        }
+                    } else {
+                        // No stored session, check server normally
+                        window.realtimeLogger?.log('auth', 'no-persistent-session', {});
+                        await this.checkLogin();
+                    }
+                } catch (error) {
+                    window.realtimeLogger?.log('auth', 'persistent-session-error', { 
+                        error: error.message 
+                    });
+                    console.error('Persistent session check error:', error);
+                    this.clearStoredSession();
+                    await this.checkLogin();
+                }
+            }
+            
+            // Validate stored session with server
+            async validateStoredSession(sessionData) {
+                try {
+                    const res = await fetch('/api/auth/validate-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userId: sessionData.id,
+                            username: sessionData.username
+                        }),
+                        credentials: 'include'
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (data.ok && data.user) {
+                        window.realtimeLogger?.log('auth', 'stored-session-validated', { 
+                            username: data.user.username 
+                        });
+                        this.setUser(data.user);
+                        // Refresh the stored session expiry
+                        this.storeSession(data.user);
+                    } else {
+                        window.realtimeLogger?.log('auth', 'stored-session-invalid', {});
+                        this.clearStoredSession();
+                        this.showLoginPrompt();
+                    }
+                } catch (error) {
+                    window.realtimeLogger?.log('auth', 'session-validation-error', { 
+                        error: error.message 
+                    });
+                    this.clearStoredSession();
+                    this.showLoginPrompt();
+                }
+            }
+            
+            // Store session in cookies
+            storeSession(user) {
+                const sessionData = {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name,
+                    email: user.email,
+                    loginTime: Date.now()
+                };
+                
+                // Set session expiry to 7 days from now
+                const expiryTime = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7 days
+                const expiryDate = new Date(expiryTime);
+                
+                this.setCookie(this.sessionKey, JSON.stringify(sessionData), expiryDate);
+                this.setCookie(this.sessionExpiryKey, expiryTime.toString(), expiryDate);
+                
+                window.realtimeLogger?.log('auth', 'session-stored', { 
+                    username: user.username,
+                    expiryDays: 7 
+                });
+            }
+            
+            // Clear stored session
+            clearStoredSession() {
+                this.deleteCookie(this.sessionKey);
+                this.deleteCookie(this.sessionExpiryKey);
+                
+                window.realtimeLogger?.log('auth', 'session-cleared', {});
+            }
+            
+            // Cookie helper methods
+            setCookie(name, value, expiryDate) {
+                const expires = expiryDate ? `; expires=${expiryDate.toUTCString()}` : '';
+                document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/; SameSite=Lax`;
+            }
+            
+            getCookie(name) {
+                const nameEQ = name + '=';
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                }
+                return null;
+            }
+            
+            deleteCookie(name) {
+                document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            }
+            
+            setupListeners() {
+                console.log('Setting up login listeners...');
+                const loginBtn = document.getElementById('login-btn');
+                const logoutBtn = document.getElementById('logout-btn');
+                
+                console.log('Login button found:', !!loginBtn);
+                console.log('Logout button found:', !!logoutBtn);
+                
+                window.realtimeLogger?.log('auth', 'setup-listeners', { 
+                    loginBtnFound: !!loginBtn,
+                    logoutBtnFound: !!logoutBtn 
+                });
+                
+                if (loginBtn) {
+                    console.log('✅ Attaching login button listener');
+                    loginBtn.addEventListener('click', () => {
+                        console.log('🔐 Login button clicked');
+                        window.realtimeLogger?.log('interaction', 'login-btn-click', {});
+                        this.openLoginModal();
+                    });
+                } else {
+                    console.error('❌ Login button not found!');
+                }
+                
+                if (logoutBtn) {
+                    console.log('✅ Attaching logout button listener');
+                    logoutBtn.addEventListener('click', () => {
+                        console.log('🚪 Logout button clicked');
+                        window.realtimeLogger?.log('interaction', 'logout-btn-click', {});
+                        this.logout();
+                    });
+                } else {
+                    console.error('❌ Logout button not found!');
+                }
+            }
+            
+            async checkLogin() {
+                try {
+                    window.realtimeLogger?.log('auth', 'check-login-start', {});
+                    
+                    const res = await fetch('/api/auth/check', {
+                        credentials: 'include'
+                    });
+                    const data = await res.json();
+                    
+                    if (data.user) {
+                        window.realtimeLogger?.log('auth', 'check-login-success', { 
+                            username: data.user.username,
+                            userId: data.user.id 
+                        });
+                        this.setUser(data.user);
+                    } else {
+                        window.realtimeLogger?.log('auth', 'check-login-no-user', {});
+                        this.showLoginPrompt();
+                    }
+                } catch (err) {
+                    window.realtimeLogger?.log('auth', 'check-login-error', { 
+                        error: err.message 
+                    });
+                    console.log('Not logged in');
+                    this.showLoginPrompt();
+                }
+            }
+            
+            showLoginPrompt() {
+                window.realtimeLogger?.log('ui', 'show-login-prompt', {});
+                
+                const loginBtn = document.getElementById('login-btn');
+                const userInfo = document.getElementById('user-info');
+                if (loginBtn) loginBtn.style.display = 'block';
+                if (userInfo) userInfo.style.display = 'none';
+            }
+            
+            openLoginModal() {
+                window.realtimeLogger?.log('interaction', 'login-modal-open', {});
+                
+                const modal = document.getElementById('login-modal');
+                if (!modal) {
+                    this.createLoginModal();
+                } else {
+                    modal.classList.add('active');
+                }
+            }
+            
+            createLoginModal() {
+                window.realtimeLogger?.log('ui', 'login-modal-create', {});
+                
+                const modal = document.createElement('div');
+                modal.id = 'login-modal';
+                modal.className = 'modal active';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <span class="modal-close">&times;</span>
+                        <h2 class="modal-title">Login to KEEP-Up</h2>
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label class="form-label">Username</label>
+                                <input type="text" id="login-username" class="form-input" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password</label>
+                                <input type="password" id="login-password" class="form-input" placeholder="Enter password" required>
+                            </div>
+                            <div id="login-error" class="form-error"></div>
+                            <button type="submit" class="form-btn">Login</button>
+                        </form>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                const closeBtn = modal.querySelector('.modal-close');
+                closeBtn.addEventListener('click', () => {
+                    window.realtimeLogger?.log('interaction', 'login-modal-close-click', {});
+                    modal.classList.remove('active');
+                });
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        window.realtimeLogger?.log('interaction', 'login-modal-backdrop-click', {});
+                        modal.classList.remove('active');
+                    }
+                });
+                
+                const form = modal.querySelector('#login-form');
+                form.addEventListener('submit', (e) => this.handleLogin(e));
+            }
+            
+            async handleLogin(e) {
+                e.preventDefault();
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                const errorDiv = document.getElementById('login-error');
+                
+                window.realtimeLogger?.log('auth', 'login-attempt', { 
+                    username: username,
+                    hasPassword: !!password 
+                });
+                
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password }),
+                        credentials: 'include'
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (data.ok && data.user) {
+                        window.realtimeLogger?.log('auth', 'login-success', { 
+                            username: data.user.username,
+                            userId: data.user.id 
+                        });
+                        this.setUser(data.user);
+                        this.storeSession(data.user); // Store session for persistence
+                        const modal = document.getElementById('login-modal');
+                        modal.classList.remove('active');
+                        window.app.loadEventsFromDatabase();
+                    } else {
+                        window.realtimeLogger?.log('auth', 'login-failed', { 
+                            username: username,
+                            error: data.error 
+                        });
+                        errorDiv.textContent = data.error || 'Login failed';
+                    }
+                } catch (err) {
+                    window.realtimeLogger?.log('auth', 'login-error', { 
+                        username: username,
+                        error: err.message 
+                    });
+                    errorDiv.textContent = 'Connection error: ' + err.message;
+                }
+            }
+            
+            setUser(user) {
+                console.log('🔑 setUser called with user:', user);
+                
+                window.realtimeLogger?.log('auth', 'user-set', { 
+                    username: user.username,
+                    userId: user.id,
+                    hasName: !!user.name,
+                    hasEmail: !!user.email 
+                });
+                
+                this.user = user;
+                const usernameDisplay = document.getElementById('username-display');
+                const userInfo = document.getElementById('user-info');
+                const loginBtn = document.getElementById('login-btn');
+                
+                if (usernameDisplay) usernameDisplay.textContent = user.username;
+                if (userInfo) userInfo.style.display = 'flex';
+                if (loginBtn) loginBtn.style.display = 'none';
+                
+                // Reload profile after login
+                if (window.app) {
+                    console.log('📞 Calling window.app.loadUserProfile()');
+                    window.app.loadUserProfile();
+                }
+            }
+            
+            async logout() {
+                window.realtimeLogger?.log('auth', 'logout-start', { 
+                    username: this.user?.username,
+                    userId: this.user?.id 
+                });
+                
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    window.realtimeLogger?.log('auth', 'logout-success', { 
+                        username: this.user?.username,
+                        userId: this.user?.id 
+                    });
+                    
+                    this.user = null;
+                    this.clearStoredSession(); // Clear persistent session
+                    this.showLoginPrompt();
+                    
+                    // Reset profile to guest
+                    if (window.app) {
+                        window.app.loadUserProfile();
+                        window.app.loadEventsFromDatabase();
+                    }
+                } catch (err) {
+                    window.realtimeLogger?.log('auth', 'logout-error', { 
+                        username: this.user?.username,
+                        error: err.message 
+                    });
+                    console.error('Logout error:', err);
+                }
+            }
+        }
+        
+        // Profile functions
+        let currentPhotoIndex = 0;
+        let profilePhotos = [];
+        
+        function renderPhotoCarousel(photos) {
+            profilePhotos = photos || [];
+            const carousel = document.getElementById('photo-carousel');
+            const navigation = document.getElementById('photo-navigation');
+            
+            if (!carousel || !navigation) return;
+            
+            carousel.innerHTML = '';
+            navigation.innerHTML = '';
+            
+            if (profilePhotos.length === 0) {
+                carousel.innerHTML = '<div class="photo-placeholder">📷</div>';
+                return;
+            }
+            
+            profilePhotos.forEach((photo, index) => {
+                const slide = document.createElement('div');
+                slide.className = `photo-slide ${index === 0 ? 'active' : ''}`;
+                slide.style.backgroundImage = `url(${photo})`;
+                carousel.appendChild(slide);
+                
+                const dot = document.createElement('div');
+                dot.className = `photo-dot ${index === 0 ? 'active' : ''}`;
+                dot.onclick = () => changePhoto(index - currentPhotoIndex);
+                navigation.appendChild(dot);
+            });
+            
+            updatePhotoNavigation();
+        }
+        
+        function changePhoto(direction) {
+            if (profilePhotos.length === 0) return;
+            
+            const newIndex = currentPhotoIndex + direction;
+            if (newIndex < 0 || newIndex >= profilePhotos.length) return;
+            
+            // Update slides
+            const slides = document.querySelectorAll('.photo-slide');
+            slides[currentPhotoIndex].classList.remove('active');
+            slides[newIndex].classList.add('active');
+            
+            // Update dots
+            const dots = document.querySelectorAll('.photo-dot');
+            dots[currentPhotoIndex].classList.remove('active');
+            dots[newIndex].classList.add('active');
+            
+            currentPhotoIndex = newIndex;
+            updatePhotoNavigation();
+        }
+        
+        function updatePhotoNavigation() {
+            const prevBtn = document.getElementById('prev-photo');
+            const nextBtn = document.getElementById('next-photo');
+            
+            if (prevBtn) {
+                prevBtn.classList.toggle('disabled', currentPhotoIndex === 0);
+            }
+            if (nextBtn) {
+                nextBtn.classList.toggle('disabled', currentPhotoIndex === profilePhotos.length - 1);
+            }
+        }
+        
+        function calculateAge(birthdate) {
+            if (!birthdate) return '';
+            const birth = new Date(birthdate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+        
+        // Initialize app
+        function initApp() {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initApp);
+                return;
+            }
+            
+            console.log('🚀 Starting app initialization...');
+            
+            try {
+                // Create app first
+                window.app = new KeepUpApp();
+                console.log('✅ KeepUpApp created');
+                
+                // Then create login manager
+                window.loginManager = new LoginManager();
+                console.log('✅ LoginManager created');
+                
+                console.log('🎯 App fully initialized!');
+            } catch (error) {
+                console.error('❌ App initialization error:', error);
+                console.error('Error stack:', error.stack);
+            }
+        }
+        
+        // Start initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>

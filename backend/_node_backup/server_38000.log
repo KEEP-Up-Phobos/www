@@ -1,0 +1,102 @@
+nohup: ignoring input
+[dotenv@17.2.3] injecting env (53) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+✅ React build served from port 3000 at /var/www/KEEP-Up/frontend/react-keepup/build
+==== [DB INIT] Creating main DB pool with config: {
+  hosts: 'localhost',
+  port: '3306',
+  user: 'root',
+  database: 'keepup_events'
+}
+(node:1478546) Warning: Accessing non-existent property 'baseSessionCookie' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+==== [DB] Pool 'main' created successfully
+==== [DB INIT] Creating Joomla DB pool with config: {
+  hosts: 'localhost',
+  port: '3306',
+  user: 'root',
+  database: 'keepup_db'
+}
+==== [DB] Pool 'joomla' created successfully
+==== [DB INIT] Main DB pool status: 1 connections
+==== [DB INIT] Joomla DB pool status: 1 connections
+✅ Database connected (main pool)
+✅ Joomla database connected (joomla pool)
+==== [DB INIT] Testing main DB connection...
+==== [DB INIT] Testing Joomla DB connection...
+✅ Database connections verified
+🔗 Creating unified_sessions table...
+✅ Unified sessions table created/verified
+✅ Unified Authentication initialized
+✅ API Gateway initialized
+🔒 SSL certificates loaded successfully
+🔌 WebSocket ready at /ws/admin
+🔌 WebSocket ready at /ws/admin
+╔════════════════════════════════════════════════════════════╗
+║        KEEPUP Server v6.0 - CONSOLIDATED                   ║
+╚════════════════════════════════════════════════════════════╝
+
+🚀 HTTP Server: http://127.0.0.1:38000
+🔒 HTTPS Server: https://127.0.0.1:3443
+🔧 Admin UI: http://127.0.0.1:38000/admin.html
+🔐 Secure Admin: https://127.0.0.1:3443/admin.html
+
+📚 API Endpoints:
+   GET  /api/events/discover     - All events
+   GET  /api/events/search?q=... - Search events
+   GET  /api/stats               - Statistics
+
+🔧 Admin Endpoints:
+   POST /api/admin/crawler/start - Start crawler
+   POST /api/admin/crawler/pause - Pause crawler
+   POST /api/admin/crawler/stop  - Stop crawler
+   GET  /api/admin/stats         - DB stats
+
+✅ Server ready!
+════════════════════════════════════════════════════════════
+💥 Uncaught Exception: Error: listen EADDRINUSE: ad
+
+👋 Received SIGTERM, shutting down gracefully...
+🗄️  Closing main database connection...
+🗄️  Closing Joomla database connection...
+🌐 Closing HTTP server...
+🔒 Closing HTTPS server...
+✅ Graceful shutdown completed
+ocess/task_queues:83:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 38000
+}
+
+
+👋 Received UNCAUGHT_EXCEPTION, shutting down gracefully...
+🗄️  Closing main database connection...
+💥 Uncaught Exception: Error: listen EADDRINUSE: address already in use 0.0.0.0:3443
+    at Server.setupListenHandle [as _listen2] (node:net:1902:16)
+    at listenInCluster (node:net:1959:12)
+    at doListen (node:net:2133:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3443
+}
+
+
+👋 Received UNCAUGHT_EXCEPTION, shutting down gracefully...
+🗄️  Closing main database connection...
+🗄️  Closing Joomla database connection...
+❌ Error during graceful shutdown: Error: Can't add new command when connection is in closed state
+    at PromisePool.end (/var/www/KEEP-Up/backend/node_modules/mysql2/lib/promise/pool.js:72:22)
+    at gracefulShutdown (/var/www/KEEP-Up/backend/main_server.js:2396:22)
+    at process.<anonymous> (/var/www/KEEP-Up/backend/main_server.js:2429:5)
+    at process.emit (node:events:524:28)
+    at process._fatalException (node:internal/process/execution:188:25) {
+  code: undefined,
+  errno: undefined,
+  sqlState: undefined,
+  sqlMessage: undefined
+}

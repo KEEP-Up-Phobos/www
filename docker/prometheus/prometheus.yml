@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    app: keepup
+
+scrape_configs:
+  # Node.js backend — exposes /metrics via prom-client
+  - job_name: keepup_node
+    static_configs:
+      - targets: ['node:3002']
+    metrics_path: /metrics
+
+  # Python Fetcher admin API — /metrics if available, else /api/fetcher/system
+  - job_name: keepup_fetcher
+    static_configs:
+      - targets: ['fetcher:8500']
+    metrics_path: /metrics
+
+  # Host machine metrics (CPU, RAM, disk, network)
+  - job_name: node_exporter
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Prometheus self-monitoring
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

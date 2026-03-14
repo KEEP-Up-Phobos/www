@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEEP-Up - Profile</title>
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        body { margin: 0; padding: 0; background: #f3f4f6; }
+        .main-content { padding: 1rem; padding-bottom: 100px; }
+        
+        .profile-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .profile-photos {
+            position: relative;
+            height: 500px;
+            background: #f8f9fa;
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .photo-carousel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .photo-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .photo-slide.active { opacity: 1; }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 48px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+        }
+
+        .photo-navigation {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .photo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .photo-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        .photo-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .photo-arrow:hover { background: rgba(0, 0, 0, 0.5); }
+        .photo-arrow.left { left: 20px; }
+        .photo-arrow.right { right: 20px; }
+        .photo-arrow.disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .profile-info { padding: 24px; background: white; }
+        .profile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .profile-name { font-size: 28px; font-weight: 700; color: #212529; margin: 0; }
+        .profile-age { font-size: 24px; color: #6c757d; margin: 0; }
+        .profile-bio { font-size: 16px; line-height: 1.5; color: #495057; margin: 0; }
+        
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 0;
+            border-top: 1px solid #e9ecef;
+            margin-top: 20px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 24px; font-weight: 700; color: #212529; display: block; }
+        .stat-label { font-size: 14px; color: #6c757d; margin-top: 4px; }
+
+        .edit-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .edit-btn:hover { background: #e9ecef; }
+
+        .edit-profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .edit-modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .edit-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .edit-modal-title { font-size: 24px; font-weight: 700; color: #212529; margin: 0; }
+        .edit-close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-weight: 600; color: #495057; margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 12px 16px; border: 2px solid #e9ecef; border-radius: 12px; }
+        .form-input:focus { outline: none; border-color: #007bff; }
+        .form-textarea { min-height: 100px; resize: vertical; }
+
+        .edit-actions {
+            display: flex;
+            gap: 12px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-secondary { background: #f8f9fa; color: #6c757d; border: 2px solid #e9ecef; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="profile-container">
+            <div class="profile-photos">
+                <div class="photo-carousel" id="photo-carousel"></div>
+                <button class="photo-arrow left" id="prev-photo" onclick="changePhoto(-1)">‹</button>
+                <button class="photo-arrow right" id="next-photo" onclick="changePhoto(1)">›</button>
+                <div class="photo-navigation" id="photo-navigation"></div>
+            </div>
+
+            <div class="profile-info">
+                <div class="profile-header">
+                    <div>
+                        <h1 class="profile-name" id="profile-name">Loading...</h1>
+                        <p class="profile-age" id="profile-age"></p>
+                    </div>
+                    <button class="edit-btn" id="edit-profile-btn">✏️</button>
+                </div>
+                <p class="profile-bio" id="profile-bio">This is my bio...</p>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-events">0</span>
+                        <span class="stat-label">Events</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-followers">0</span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-following">0</span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-profile-modal" id="edit-profile-modal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h2 class="edit-modal-title">Edit Profile</h2>
+                <button class="edit-close-btn" id="close-edit-modal">&times;</button>
+            </div>
+            <form id="edit-profile-form">
+                <div class="form-group">
+                    <label class="form-label">👤 Full Name</label>
+                    <input type="text" class="form-input" id="edit-name" placeholder="Your full name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📅 Birthdate</label>
+                    <input type="date" class="form-input" id="edit-birthdate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📝 Bio</label>
+                    <textarea class="form-input form-textarea" id="edit-bio" placeholder="Tell people about yourself..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📍 Location Address</label>
+                    <input type="text" class="form-input" id="edit-location-address" placeholder="Your location...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🗺️ Set Location on Map</label>
+                    <div id="location-map" style="height: 300px; border-radius: 12px; border: 2px solid #e9ecef; margin-bottom: 12px;"></div>
+                    <button type="button" id="set-location-btn" style="width: 100%; padding: 10px; background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; cursor: pointer; margin-bottom: 8px;">
+                        📍 Use My Current Location
+                    </button>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="number" step="0.000001" class="form-input" id="manual-lat" placeholder="Latitude" style="flex: 1;">
+                        <input type="number" step="0.000001" class="form-input" id="manual-lng" placeholder="Longitude" style="flex: 1;">
+                        <button type="button" id="set-manual-coords" style="padding: 10px 16px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Set
+                        </button>
+                    </div>
+                    <small style="color: #6c757d; font-size: 12px;">
+                        💡 Tip: Enable location permissions in your browser, or enter coordinates manually (right-click on Google Maps to copy coordinates)
+                    </small>
+                </div>
+                <div class="edit-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="grid.html" class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Events</span>
+        </a>
+        <a href="map.html" class="nav-item">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-label">Map</span>
+        </a>
+        <a href="create.html" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">Create</span>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        let currentPhotoIndex = 0, profilePhotos = [];
+        let userProfile = {};
+        let locationMap = null;
+        let locationMarker = null;
+
+        function renderPhotoCarousel(photos) {
+            profilePhotos = photos || [];
+            const carousel = document.getElementById('photo-carousel');
+            const navigation = document.getElementById('photo-navigation');
+            carousel.innerHTML = '';
+            navigation.innerHTML = '';
+            
+            if (profilePhotos.length === 0) {
+                carousel.innerHTML = '<div class="photo-placeholder">📷</div>';
+                return;
+            }
+            
+            profilePhotos.forEach((photo, index) => {
+                const slide = document.createElement('div');
+                slide.className = `photo-slide ${index === 0 ? 'active' : ''}`;
+                slide.style.backgroundImage = `url(${photo})`;
+                carousel.appendChild(slide);
+                
+                const dot = document.createElement('div');
+                dot.className = `photo-dot ${index === 0 ? 'active' : ''}`;
+                dot.onclick = () => changePhoto(index - currentPhotoIndex);
+                navigation.appendChild(dot);
+            });
+            updatePhotoNavigation();
+        }
+
+        function changePhoto(direction) {
+            if (profilePhotos.length === 0) return;
+            const newIndex = currentPhotoIndex + direction;
+            if (newIndex < 0 || newIndex >= profilePhotos.length) return;
+            
+            document.querySelectorAll('.photo-slide')[currentPhotoIndex].classList.remove('active');
+            document.querySelectorAll('.photo-slide')[newIndex].classList.add('active');
+            document.querySelectorAll('.photo-dot')[currentPhotoIndex].classList.remove('active');
+            document.querySelectorAll('.photo-dot')[newIndex].classList.add('active');
+            currentPhotoIndex = newIndex;
+            updatePhotoNavigation();
+        }
+
+        function updatePhotoNavigation() {
+            const prevBtn = document.getElementById('prev-photo');
+            const nextBtn = document.getElementById('next-photo');
+            if (prevBtn) prevBtn.classList.toggle('disabled', currentPhotoIndex === 0);
+            if (nextBtn) nextBtn.classList.toggle('disabled', currentPhotoIndex === profilePhotos.length - 1);
+        }
+
+        function calculateAge(birthdate) {
+            if (!birthdate) return '';
+            const birth = new Date(birthdate);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            if (today.getMonth() - birth.getMonth() < 0) age--;
+            return age;
+        }
+
+        function initLocationMap() {
+            const mapContainer = document.getElementById('location-map');
+            if (!mapContainer || !window.L) return;
+            
+            // Clear any existing map
+            if (locationMap) {
+                locationMap.remove();
+            }
+            
+            // Create mini map
+            locationMap = L.map('location-map').setView([-30.0346, -51.2177], 10); // Porto Alegre, Brazil
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(locationMap);
+            
+            // Add draggable marker if we have coordinates
+            if (userProfile.lat && userProfile.lng) {
+                locationMarker = L.marker([userProfile.lat, userProfile.lng], {
+                    draggable: true
+                }).addTo(locationMap);
+                
+                locationMap.setView([userProfile.lat, userProfile.lng], 15);
+                
+                // Handle marker drag
+                locationMarker.on('dragend', (e) => {
+                    const marker = e.target;
+                    const position = marker.getLatLng();
+                    userProfile.lat = position.lat;
+                    userProfile.lng = position.lng;
+                });
+            }
+            
+            // Handle map clicks to place marker
+            locationMap.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                
+                // Remove existing marker if any
+                if (locationMarker) {
+                    locationMap.removeLayer(locationMarker);
+                }
+                
+                // Add new draggable marker
+                locationMarker = L.marker([lat, lng], {
+                    draggable: true
+                }).addTo(locationMap);
+                
+                // Update user profile coordinates
+                userProfile.lat = lat;
+                userProfile.lng = lng;
+                
+                // Update manual coordinate input fields
+                document.getElementById('manual-lat').value = lat.toFixed(6);
+                document.getElementById('manual-lng').value = lng.toFixed(6);
+                
+                // Handle marker drag
+                locationMarker.on('dragend', (e) => {
+                    const marker = e.target;
+                    const position = marker.getLatLng();
+                    userProfile.lat = position.lat;
+                    userProfile.lng = position.lng;
+                    // Update input fields
+                    document.getElementById('manual-lat').value = position.lat.toFixed(6);
+                    document.getElementById('manual-lng').value = position.lng.toFixed(6);
+                });
+            });
+        }
+
+        async function setCurrentLocation() {
+            const setLocationBtn = document.getElementById('set-location-btn');
+            
+            console.log('🔍 Checking geolocation support...');
+            
+            if (!navigator.geolocation) {
+                alert('❌ Geolocation is not supported by this browser');
+                console.error('Geolocation not supported');
+                return;
+            }
+            
+            console.log('✅ Geolocation supported, checking permissions...');
+            
+            // Check if we already have permission
+            if (navigator.permissions) {
+                try {
+                    const permission = await navigator.permissions.query({ name: 'geolocation' });
+                    console.log('Permission state:', permission.state);
+                    if (permission.state === 'denied') {
+                        alert('❌ Location access denied. Please enable location permissions in your browser settings and refresh the page.');
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Permission check not supported or failed:', e);
+                }
+            }
+            
+            console.log('🚀 Requesting location...');
+            setLocationBtn.textContent = '⏳ Getting location...';
+            setLocationBtn.disabled = true;
+            
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    const options = {
+                        enableHighAccuracy: true,
+                        timeout: 30000,
+                        maximumAge: 300000
+                    };
+                    console.log('Geolocation options:', options);
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            console.log('✅ Got position:', pos.coords);
+                            resolve(pos);
+                        },
+                        (err) => {
+                            console.error('❌ Geolocation error:', err);
+                            reject(err);
+                        },
+                        options
+                    );
+                });
+                
+                const { latitude, longitude, accuracy } = position.coords;
+                console.log('📍 Location acquired:', { latitude, longitude, accuracy });
+                
+                // Update map
+                if (locationMap) {
+                    locationMap.setView([latitude, longitude], 15);
+                    
+                    // Remove existing marker if any
+                    if (locationMarker) {
+                        locationMap.removeLayer(locationMarker);
+                    }
+                    
+                    // Add draggable marker
+                    locationMarker = L.marker([latitude, longitude], {
+                        draggable: true
+                    }).addTo(locationMap);
+                    
+                    // Handle marker drag
+                    locationMarker.on('dragend', (e) => {
+                        const marker = e.target;
+                        const position = marker.getLatLng();
+                        userProfile.lat = position.lat;
+                        userProfile.lng = position.lng;
+                    });
+                }
+                
+                // Update user profile
+                userProfile.lat = latitude;
+                userProfile.lng = longitude;
+                
+                setLocationBtn.textContent = '📍 Use My Current Location';
+                setLocationBtn.disabled = false;
+                
+                console.log('✅ Location set successfully');
+                alert(`✅ Location set successfully!\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}\n🎯 Accuracy: ${Math.round(accuracy)}m`);
+            } catch (error) {
+                console.error('❌ Geolocation failed:', error);
+                
+                let errorMessage = '❌ Could not get your location: ';
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage += 'Location access denied. Please enable location permissions in your browser settings and refresh the page.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage += 'Location information unavailable. Check if location services are enabled on your device.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage += 'Location request timed out (30s). Try again or check your internet connection.';
+                        break;
+                    default:
+                        errorMessage += error.message || 'Unknown error';
+                        break;
+                }
+                
+                alert(errorMessage);
+                setLocationBtn.textContent = '📍 Use My Current Location';
+                setLocationBtn.disabled = false;
+            }
+        }
+
+        function setManualCoordinates() {
+            const latInput = document.getElementById('manual-lat');
+            const lngInput = document.getElementById('manual-lng');
+            
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('❌ Please enter valid latitude and longitude coordinates');
+                return;
+            }
+            
+            if (lat < -90 || lat > 90) {
+                alert('❌ Latitude must be between -90 and 90');
+                return;
+            }
+            
+            if (lng < -180 || lng > 180) {
+                alert('❌ Longitude must be between -180 and 180');
+                return;
+            }
+            
+            console.log('📍 Setting manual coordinates:', lat, lng);
+            
+            // Update map
+            if (locationMap) {
+                locationMap.setView([lat, lng], 15);
+                
+                // Remove existing marker if any
+                if (locationMarker) {
+                    locationMap.removeLayer(locationMarker);
+                }
+                
+                // Add draggable marker
+                locationMarker = L.marker([lat, lng], {
+                    draggable: true
+                }).addTo(locationMap);
+                
+                // Handle marker drag
+                locationMarker.on('dragend', (e) => {
+                    const marker = e.target;
+                    const position = marker.getLatLng();
+                    userProfile.lat = position.lat;
+                    userProfile.lng = position.lng;
+                    // Update input fields
+                    document.getElementById('manual-lat').value = position.lat.toFixed(6);
+                    document.getElementById('manual-lng').value = position.lng.toFixed(6);
+                });
+            }
+            
+            // Update user profile
+            userProfile.lat = lat;
+            userProfile.lng = lng;
+            
+            alert(`✅ Manual coordinates set!\n📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        }
+
+        async function saveProfile() {
+            if (!window.loginManager || !window.loginManager.user) {
+                alert('❌ You must be logged in to save profile');
+                return;
+            }
+            
+            const editName = document.getElementById('edit-name');
+            const editBirthdate = document.getElementById('edit-birthdate');
+            const editBio = document.getElementById('edit-bio');
+            const editLocationAddress = document.getElementById('edit-location-address');
+            
+            const profileData = {
+                username: window.loginManager.user.username,
+                name: editName?.value || userProfile.name,
+                birthdate: editBirthdate?.value || '',
+                bio: editBio?.value || '',
+                location: editLocationAddress?.value || '',
+                lat: userProfile.lat || null,
+                lng: userProfile.lng || null,
+                photos: profilePhotos || []
+            };
+            
+            try {
+                const response = await fetch('/api/user/profile/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profileData),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    // Update local user profile
+                    userProfile = { ...userProfile, ...profileData };
+                    
+                    // Update loginManager user
+                    if (window.loginManager.user) {
+                        window.loginManager.user.name = profileData.name;
+                        // Update params in user object
+                        const params = {
+                            birthdate: profileData.birthdate,
+                            bio: profileData.bio,
+                            location: profileData.location,
+                            lat: profileData.lat,
+                            lng: profileData.lng,
+                            photos: profileData.photos
+                        };
+                        window.loginManager.user.params = JSON.stringify(params);
+                    }
+                    
+                    updateProfileDisplay();
+                    
+                    const editModal = document.getElementById('edit-profile-modal');
+                    if (editModal) editModal.style.display = 'none';
+                    
+                    alert('✅ Profile updated successfully!');
+                } else {
+                    alert('❌ Error saving profile: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Profile save error:', err);
+                alert('❌ Error saving profile: ' + err.message);
+            }
+        }
+
+        function updateProfileDisplay() {
+            document.getElementById('profile-name').textContent = userProfile.name || 'Loading...';
+            const age = calculateAge(userProfile.birthdate);
+            if (age) document.getElementById('profile-age').textContent = `${age} years old`;
+            document.getElementById('profile-bio').textContent = userProfile.bio || 'This is my bio...';
+            renderPhotoCarousel(userProfile.photos);
+
+            document.getElementById('edit-name').value = userProfile.name || '';
+            document.getElementById('edit-birthdate').value = userProfile.birthdate || '';
+            document.getElementById('edit-bio').value = userProfile.bio || '';
+            document.getElementById('edit-location-address').value = userProfile.location || '';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = window.loginManager?.user;
+            let params = {};
+            try {
+                if (user?.params && typeof user.params === 'string') {
+                    params = JSON.parse(user.params);
+                }
+            } catch (e) {}
+
+            userProfile = {
+                id: user?.id || '',
+                username: user?.username || '',
+                name: user?.name || user?.username || 'Guest User',
+                email: user?.email || '',
+                birthdate: params.birthdate || '',
+                bio: params.bio || '',
+                location: params.location || '',
+                lat: params.lat || null,
+                lng: params.lng || null,
+                photos: params.photos || []
+            };
+
+            updateProfileDisplay();
+
+            document.getElementById('edit-profile-btn').onclick = () => {
+                setTimeout(() => initLocationMap(), 100);
+                document.getElementById('edit-profile-modal').style.display = 'block';
+            };
+            
+            document.getElementById('close-edit-modal').onclick = () => {
+                document.getElementById('edit-profile-modal').style.display = 'none';
+            };
+            
+            document.getElementById('cancel-edit-btn').onclick = () => {
+                document.getElementById('edit-profile-modal').style.display = 'none';
+            };
+            
+            document.getElementById('edit-profile-form').onclick = (e) => {
+                if (e.target.tagName === 'FORM') {
+                    e.preventDefault();
+                    saveProfile();
+                }
+            };
+            
+            // Proper form submission handler
+            document.getElementById('edit-profile-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveProfile();
+            });
+            
+            document.getElementById('set-location-btn').onclick = setCurrentLocation;
+            document.getElementById('set-manual-coords').onclick = setManualCoordinates;
+        });
+    </script>
+</body>
+</html>

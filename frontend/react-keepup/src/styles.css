@@ -1,0 +1,14 @@
+/* Import the comprehensive design system */
+@import './styles/design-system.css';
+
+/* Minimal additional global styles */
+body { 
+  margin: 0; 
+}
+
+/* Code blocks styling */
+pre { 
+  background:#f6f8fa; 
+  padding:12px; 
+  border-radius:6px 
+}

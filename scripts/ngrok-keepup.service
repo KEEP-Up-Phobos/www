@@ -1,0 +1,21 @@
+[Unit]
+Description=ngrok tunnel for KEEP-Up (exposes local Node server)
+After=network.target
+
+[Service]
+# Run ngrok as root so it can access the root ngrok config where the authtoken is stored
+User=root
+# WorkDir not strictly required but helpful
+WorkingDirectory=/media/phobos/KEEP-Up App
+# Provide authtoken for ngrok so the service can authenticate (local dev only)
+Environment="NGROK_AUTHTOKEN=39UZSS3b4bia3zMAuHQ8VHcT0he_unCyHEyVM8iEftumVfyK"
+# Path to ngrok binary - update if necessary (use `which ngrok` to confirm)
+ExecStart=/usr/local/bin/ngrok http 3002 --log=stdout
+Restart=always
+RestartSec=5
+# Keep stdout/stderr through journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

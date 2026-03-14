@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEEP-Up Admin Dashboard</title>
+    <script>
+        // Redirect to the React admin dashboard on port 3001
+        window.location.href = 'http://192.168.15.8:3001/admin';
+    </script>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #0f172a; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="text-align: center;">
+            <h2>🔄 Redirecting to Admin Dashboard...</h2>
+            <p>If you are not redirected automatically, <a href="http://192.168.15.8:3001/admin" style="color: #06b6d4;">click here</a>.</p>
+        </div>
+    </div>
+</body>
+</html>
+        
+        .login-container.show {
+            display: flex;
+        }
+        
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .login-form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .login-form-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .login-form-input {
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        
+        .login-form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .login-btn {
+            padding: 12px 20px;
+            background: var(--accent);
+            color: var(--bg-dark);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+        
+        .login-btn:hover:not(:disabled) {
+            background: var(--accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(6, 182, 212, 0.2);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .login-message {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+            margin-bottom: 15px;
+        }
+        
+        .login-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .login-message.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        /* DASHBOARD STYLES */
+        
+        /* Global Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: transparent;
+            z-index: 1000;
+            border-radius: 0;
+        }
+        
+        .progress-bar.active {
+            background: linear-gradient(90deg, var(--accent), var(--success), var(--accent));
+            background-size: 200% 100%;
+            animation: progress 1s ease-in-out infinite;
+        }
+        
+        @keyframes progress {
+            0% { background-position: 0% 0; }
+            100% { background-position: 100% 0; }
+        }
+        
+        .dashboard-wrapper {
+            display: none;
+            flex: 1;
+            height: 100vh;
+        }
+        
+        .dashboard-wrapper.show {
+            display: flex;
+        }
+        
+        .wrapper {
+            display: flex;
+            height: 100%;
+            gap: 1px;
+            background: var(--border);
+            width: 100%;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        
+        .sidebar h1 {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-section {
+            margin-bottom: 25px;
+        }
+        
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--accent);
+        }
+        
+        .nav-item.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+        }
+        
+        .topbar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .topbar-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        
+        .logout-btn {
+            padding: 6px 12px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-idle { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+        .badge-running { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-paused { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: var(--bg-hover);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-body {
+            padding: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .form-input,
+        .form-select {
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .log-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .log-entry.success { color: var(--success); }
+        .log-entry.warning { color: var(--warning); }
+        .log-entry.error { color: var(--danger); }
+        .log-entry.info { color: var(--accent); }
+        
+        .log-time {
+            color: var(--text-muted);
+            margin-right: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 1400px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 240px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .wrapper {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 15px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                max-height: 150px;
+                overflow-x: auto;
+                display: flex;
+                align-items: center;
+                gap: 30px;
+            }
+            
+            .sidebar h1 {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            
+            .nav-section {
+                display: flex;
+                gap: 15px;
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+            
+            .nav-section-title {
+                display: none;
+            }
+            
+            .nav-item {
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+            
+            .topbar {
+                padding: 12px 15px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN CONTAINER -->
+    <div class="login-container show" id="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>🔐 KEEP-Up</h1>
+                <p>Admin Dashboard</p>
+            </div>
+            <div id="login-message" class="login-message"></div>
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="login-form-group">
+                    <label class="login-form-label">Username</label>
+                    <input type="text" id="login-username" class="login-form-input" placeholder="Enter your username" required autofocus>
+                </div>
+                <div class="login-form-group">
+                    <label class="login-form-label">Password</label>
+                    <input type="password" id="login-password" class="login-form-input" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-btn" id="login-submit">Sign In</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- DASHBOARD -->
+    <div class="dashboard-wrapper" id="dashboard">
+        <!-- Global Progress Bar -->
+        <div class="progress-bar" id="progress-bar"></div>
+        
+        <div class="wrapper">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <h1>🚀 KEEP-Up</h1>
+                <div class="nav-section">
+                    <div class="nav-section-title">Control</div>
+                    <div class="nav-item active" onclick="showTab('crawler')">🌐 Crawler</div>
+                    <div class="nav-item" onclick="showTab('populate')">🏙️ Populate Town</div>
+                    <div class="nav-item" onclick="showTab('stats')">📊 Stats</div>
+                    <div class="nav-item" onclick="showTab('events')">📋 Events</div>
+                    <div class="nav-item" onclick="showTab('cache')">💾 Cache</div>
+                    <div class="nav-item" onclick="showTab('config')">⚙️ Config</div>
+                    <div class="nav-item" onclick="showTab('logs')">📝 Logs</div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Ready</span>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main">
+                <div class="topbar">
+                    <div class="topbar-title" id="tab-title">🌐 Artist Crawler v5.0</div>
+                    <div class="topbar-actions">
+                        <div class="user-info">
+                            👤 <span id="user-display">Loading...</span>
+                        </div>
+                        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                        <span class="badge badge-idle" id="status-badge">IDLE</span>
+                    </div>
+                </div>
+            
+            <div class="content">
+                <!-- CRAWLER TAB -->
+                <div id="tab-crawler" class="tab-content">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Artists in Database</div>
+                            <div class="stat-value" id="stat-artists">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Events Found</div>
+                            <div class="stat-value" id="stat-events">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Processing Speed</div>
+                            <div class="stat-value" id="stat-speed">0/min</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Hit Rate</div>
+                            <div class="stat-value" id="stat-cache">--</div>
+                        </div>
+                    </div>
+                    
+                    <!-- UNIFIED CRAWLER CONTROL -->
+                    <div class="section">
+                        <div class="section-header">🎯 Unified Crawler Control</div>
+                        <div class="section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Mode</label>
+                                    <select class="form-select" id="crawler-mode" onchange="updateCrawlerMode()">
+                                        <option value="find_new">🆕 Find New Artists (Wikipedia)</option>
+                                        <option value="update_existing">🔄 Update Existing Artists</option>
+                                        <option value="both">⚡ Both Find & Update</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Parallel Batch Size</label>
+                                    <input type="number" class="form-input" id="batch-size" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                            
+                            <!-- PYTHON SERPENTS OPTIONS -->
+                            <div class="form-row" style="background: rgba(6, 182, 212, 0.1); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                                <div class="form-group" style="flex: 2;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="use-python" checked style="width: auto; cursor: pointer;" onchange="togglePythonOptions()">
+                                        <span>🐍 Use Python Serpents (10x faster)</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Parallel async fetching from multiple APIs</small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="use-dragons" style="width: auto; cursor: pointer;">
+                                        <span>🦅📚 Enable Dragons</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Web scraping + Wikipedia</small>
+                                </div>
+                            </div>
+                            
+                            <div id="python-advanced-options" class="form-row" style="margin-top: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Python Max Parallel</label>
+                                    <input type="number" class="form-input" id="python-max-parallel" value="10" min="1" max="50">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Python Event Limit</label>
+                                    <input type="number" class="form-input" id="python-limit" placeholder="No limit" min="1">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row" id="python-sources-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Python Sources</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="python-source" value="ticketmaster" checked>
+                                            <span>Ticketmaster</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="python-source" value="sympla" checked>
+                                            <span>Sympla</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="python-source" value="duckduckgo">
+                                            <span>DuckDuckGo</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="python-source" value="wikipedia">
+                                            <span>Wikipedia</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- CRAWLER REFINING OPTIONS -->
+                            <div class="form-row" style="margin-top: 15px;">
+                                <div class="form-group">
+                                    <label class="form-label">Country Filter</label>
+                                    <input type="text" class="form-input" id="crawler-country" placeholder="e.g., Brazil (leave empty for all)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Artists Limit</label>
+                                    <input type="number" class="form-input" id="crawler-artists-limit" placeholder="No limit" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Events Limit per Artist</label>
+                                    <input type="number" class="form-input" id="crawler-events-limit" value="50" min="1">
+                                </div>
+                            </div>
+
+                            <!-- ARTIST / EVENT TOGGLES -->
+                            <div class="form-row" style="margin-top: 10px; background: rgba(148, 163, 184, 0.08); padding: 10px; border-radius: 8px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="collect-artists" checked style="width: auto; cursor: pointer;">
+                                        <span>🎵 Collect Artists (Wikipedia + Last.fm)</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Turn off to skip artist discovery</small>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="collect-events" checked style="width: auto; cursor: pointer;">
+                                        <span>🎫 Fetch Events for Artists</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Uses existing artists if discovery is off</small>
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-top: 8px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="enable-wikipedia" checked style="width: auto; cursor: pointer;">
+                                        <span>📚 Use Wikipedia Lists</span>
+                                    </label>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="enable-lastfm" checked style="width: auto; cursor: pointer;">
+                                        <span>🎸 Use Last.fm Seeds</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Existing Artists Limit</label>
+                                    <input type="number" class="form-input" id="existing-artists-limit" value="500" min="1">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="skip-dead-artists" checked style="width: auto; cursor: pointer;">
+                                        <span>Skip Dead Artists (No Events)</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">⚠️ Artists with death dates won't be added</small>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="log-details" checked style="width: auto; cursor: pointer;">
+                                        <span>Detailed Logging</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block; margin-top: 4px;">📝 Log every artist processed</small>
+                                </div>
+                            </div>
+                            
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" id="btn-start" onclick="startCrawler()">▶️ Start Crawling</button>
+                                <button class="btn btn-secondary" id="btn-pause" onclick="pauseCrawler()" disabled>⏸️ Pause</button>
+                                <button class="btn btn-danger" id="btn-stop" onclick="stopCrawler()" disabled>⏹️ Stop</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BREED ARTISTS ONLY -->
+                    <div class="section">
+                        <div class="section-header">🎵 Breed Artists (Wikipedia + Last.fm)</div>
+                        <div class="section-body">
+                            <p style="color: var(--text-muted); margin-bottom: 10px;">Collect artists only (no events) to seed the database. Uses Wikipedia lists and Last.fm top/genre charts.</p>
+                            <div class="form-row" style="margin-bottom: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Artists Limit</label>
+                                    <input type="number" class="form-input" id="breed-artists-limit" placeholder="Default 500" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Sources</label>
+                                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px;">
+                                        <label style="display: flex; align-items: center; gap: 6px;">
+                                            <input type="checkbox" id="breed-use-wiki" checked style="width: auto; cursor: pointer;"> 📚 Wikipedia
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px;">
+                                            <input type="checkbox" id="breed-use-lastfm" checked style="width: auto; cursor: pointer;"> 🎸 Last.fm
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="startBreedArtists()">🐣 Breed Artists Only</button>
+                        </div>
+                    </div>
+                    
+                    <!-- REAL-TIME STATS -->
+                    <div class="section">
+                        <div class="section-header">📊 Real-time Statistics</div>
+                        <div class="section-body">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.9rem;">
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Processing</div>
+                                    <div style="margin-top: 5px; line-height: 1.8;">
+                                        <div><strong>Status:</strong> <span id="current-status">Ready</span></div>
+                                        <div><strong>Artists Processed:</strong> <span id="current-count">0</span></div>
+                                        <div><strong>Events Added:</strong> <span id="current-events">0</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Performance</div>
+                                    <div style="margin-top: 5px; line-height: 1.8;">
+                                        <div><strong>Uptime:</strong> <span id="current-uptime">0m 0s</span></div>
+                                        <div><strong>Cache Hits:</strong> <span id="current-cache">0</span></div>
+                                        <div><strong>Skipped (Dead):</strong> <span id="skipped-dead">0</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- POPULATE TOWN TAB -->
+                <div id="tab-populate" class="tab-content hidden">
+                    <div class="section">
+                        <div class="section-header">🏙️ Populate Town - Multi-Platform Event Scraper</div>
+                        <div class="section-body">
+                            <div style="background: rgba(6, 182, 212, 0.1); padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #06b6d4;">
+                                <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                    🌍 <strong>Search ALL event platforms for any event in a city:</strong><br/>
+                                    Sympla, Eventbrite, Bandsintown, Songkick, Shotgun, Ticketmaster, DuckDuckGo
+                                </p>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label class="form-label">City Name</label>
+                                    <input type="text" class="form-input" id="populate-town" placeholder="e.g., Porto Alegre, São Paulo, Rio de Janeiro" value="Porto Alegre">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Country</label>
+                                    <input type="text" class="form-input" id="populate-country" placeholder="e.g., Brazil" value="Brazil">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max Events (blank = all)</label>
+                                    <input type="number" class="form-input" id="populate-max-events" placeholder="e.g., 100" min="0">
+                                </div>
+                            </div>
+                            
+                            <!-- PYTHON SERPENTS OPTIONS FOR POPULATE TOWN -->
+                            <div class="form-row" style="background: rgba(6, 182, 212, 0.1); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                                <div class="form-group" style="flex: 2;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="populate-use-python" checked style="width: auto; cursor: pointer;" onchange="togglePopulatePythonOptions()">
+                                        <span>🐍 Use Python Serpents (10x faster)</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Parallel async fetching from multiple APIs</small>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <input type="checkbox" id="populate-use-dragons" style="width: auto; cursor: pointer;">
+                                        <span>🦅📚 Enable Dragons</span>
+                                    </label>
+                                    <small style="color: var(--text-muted); display: block;">Web scraping + Wikipedia</small>
+                                </div>
+                            </div>
+                            
+                            <div id="populate-python-advanced-options" class="form-row" style="margin-top: 10px;">
+                                <div class="form-group">
+                                    <label class="form-label">Python Max Parallel</label>
+                                    <input type="number" class="form-input" id="populate-python-max-parallel" value="10" min="1" max="50">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row" id="populate-python-sources-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Python Sources</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="populate-python-source" value="ticketmaster" checked>
+                                            <span>Ticketmaster</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="populate-python-source" value="sympla" checked>
+                                            <span>Sympla</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="populate-python-source" value="duckduckgo">
+                                            <span>DuckDuckGo</span>
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                            <input type="checkbox" class="populate-python-source" value="wikipedia">
+                                            <span>Wikipedia</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="button-group" style="margin-top: 15px;">
+                                <button class="btn btn-primary" onclick="startPopulateTown()">🚀 Start Population</button>
+                                <button class="btn btn-secondary" onclick="checkTownStatus()">📊 Check Town Status</button>
+                            </div>
+                            
+                            <div id="populate-status" style="margin-top: 20px; display: none;">
+                                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; border: 1px solid var(--border);">
+                                    <h3 style="color: var(--accent); margin-top: 0;">📍 Town Status</h3>
+                                    <div id="populate-status-content" style="font-size: 0.9rem; color: var(--text-primary);">
+                                        Loading...
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="populate-progress" style="margin-top: 20px; display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h3 style="color: var(--accent); margin: 0;">⏳ Population Progress</h3>
+                                    <button class="btn btn-secondary" onclick="copyPopulateLog(this)" style="padding: 6px 12px; font-size: 0.8rem;">📋 Copy Log</button>
+                                </div>
+                                <div id="populate-log" style="background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid var(--border); padding: 10px; max-height: 400px; overflow-y: auto; font-family: 'Monaco', monospace; font-size: 0.8rem;">
+                                    <div class="log-entry info"><span class="log-time">--:--</span> Waiting for population to start...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CACHE TAB -->
+                <div id="tab-cache" class="tab-content hidden">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Hits</div>
+                            <div class="stat-value" id="cache-hits">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Misses</div>
+                            <div class="stat-value" id="cache-misses">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cached Responses</div>
+                            <div class="stat-value" id="cache-size">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Cache Health</div>
+                            <div class="stat-value" id="cache-health">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">🗑️ Cache Management</div>
+                        <div class="section-body">
+                            <div class="button-group">
+                                <button class="btn btn-secondary" onclick="getStats()">🔄 Refresh Stats</button>
+                                <button class="btn btn-danger" onclick="clearCache()">🗑️ Clear Cache</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- STATS TAB -->
+                <div id="tab-stats" class="tab-content hidden">
+                    <div class="grid">
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Total Artists</div>
+                            <div class="stat-value" id="db-artists">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Total Events</div>
+                            <div class="stat-value" id="db-events">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">DB: Events (24h)</div>
+                            <div class="stat-value" id="db-recent">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Proxies Available</div>
+                            <div class="stat-value" id="proxy-count">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-header">📈 Statistics</div>
+                        <div class="section-body">
+                            <button class="btn btn-primary" onclick="loadStats()">🔄 Load Stats</button>
+                            <div id="stats-details" style="margin-top: 20px; display: none;">
+                                <div style="margin-bottom: 20px;">
+                                    <h3 style="color: var(--accent); margin-bottom: 10px;">📍 Events by Country (Top 10)</h3>
+                                    <div id="country-stats" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; font-size: 0.9rem;">
+                                        <p style="color: var(--text-muted);">Loading...</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="color: var(--accent); margin-bottom: 10px;">🎫 Events by Source</h3>
+                                    <div id="source-stats" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; font-size: 0.9rem;">
+                                        <p style="color: var(--text-muted);">Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- EVENTS INSPECTOR TAB -->
+                <div id="tab-events" class="tab-content hidden">
+                    <div class="section">
+                        <div class="section-header">📋 Events Inspector - Detailed View</div>
+                        <div class="section-body">
+                            <div class="button-group" style="margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                                <button class="btn btn-primary" onclick="loadEventsInspector()">🔍 Load All Events</button>
+                                <button class="btn btn-secondary" onclick="filterEventsBySource('bandsintown')">🎵 Bandsintown</button>
+                                <button class="btn btn-secondary" onclick="filterEventsBySource('lastfm')">🎸 Last.fm</button>
+                                <button class="btn btn-secondary" onclick="filterEventsBySource('sample-data')">🤖 AI Generated</button>
+                                <input type="text" id="event-search" placeholder="🔎 Search artist or event..." style="padding: 8px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); flex: 1; min-width: 200px;" onkeyup="filterEventsBySearch()">
+                            </div>
+                            <div id="events-inspector" style="max-height: 700px; overflow-y: auto; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid var(--border); padding: 0;">
+                                <div style="text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 0.9rem;">Click "Load All Events" to display event details</div>
+                            </div>
+                            <div style="margin-top: 10px; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem;">
+                                <span>📊 Total: <strong id="event-count">0</strong> events</span>
+                                <span>🔍 Displayed: <strong id="event-filtered">0</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- LOGS TAB -->
+                <div id="tab-logs" class="tab-content hidden">
+                    <div class="section">
+                        <div class="section-header">📝 Live Activity Log</div>
+                        <div class="section-body">
+                            <div class="log-box" id="log-box">
+                                <div class="log-entry info"><span class="log-time">--:--</span> Ready for commands</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CONFIG TAB -->
+                <div id="tab-config" class="tab-content hidden">
+                    <div class="section">
+                        <div class="section-header">⚙️ AI & Search Configuration</div>
+                        <div class="section-body">
+                            <div style="background: rgba(6, 182, 212, 0.1); padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 3px solid #06b6d4;">
+                                <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                    🤖 <strong>Configure AI Models & Search Engines</strong><br/>
+                                    Select which AI models and search engines to use for Populate Town and Crawler features
+                                </p>
+                            </div>
+                            
+                            <h3 style="color: var(--accent); margin-top: 0;">💰 AI Models - PAID</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 25px;">
+                                <!-- PAID MODELS -->
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="gpt-4" data-provider="openai"> 
+                                    <span style="margin-left: 8px;">🧠 GPT-4</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="gpt-3.5-turbo" data-provider="openai"> 
+                                    <span style="margin-left: 8px;">⚡ GPT-3.5 Turbo</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="claude-3-5-sonnet-20241022" data-provider="anthropic"> 
+                                    <span style="margin-left: 8px;">🎨 Claude 3.5 Sonnet</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="claude-3-opus-20240229" data-provider="anthropic"> 
+                                    <span style="margin-left: 8px;">🎬 Claude 3 Opus</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="mistralai/mistral-large" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">🟠 Mistral Large</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="mistralai/mistral-medium" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">🟠 Mistral Medium</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(10, 200, 150, 0.1); border: 1px solid rgba(10, 200, 150, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="google/gemini-pro" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">🔮 Gemini Pro</span>
+                                </label>
+                            </div>
+                            
+                            <h3 style="color: var(--accent); margin-top: 0;">🎉 AI Models - FREE (via OpenRouter)</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 25px;">
+                                <!-- FREE MODELS via OpenRouter -->
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="deepseek/deepseek-chat" data-provider="openrouter" checked> 
+                                    <span style="margin-left: 8px;">🚀 DeepSeek Chat (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="meta-llama/llama-3.1-8b-instruct:free" data-provider="openrouter" checked> 
+                                    <span style="margin-left: 8px;">🦙 Llama 3.1 8B (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="mistralai/mistral-7b-instruct:free" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">🟠 Mistral 7B (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="google/gemma-2-9b-it:free" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">💎 Gemma 2 9B (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="ai-model-checkbox" value="qwen/qwen-2-7b-instruct:free" data-provider="openrouter"> 
+                                    <span style="margin-left: 8px;">🌟 Qwen 2 7B (Free)</span>
+                                </label>
+                            </div>
+                            
+                            <h3 style="color: var(--accent); margin-top: 0;">🔍 Event APIs (Configured in .env)</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="eventbrite" checked> 
+                                    <span style="margin-left: 8px;">🎟️ Eventbrite ✅</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="ticketmaster" checked> 
+                                    <span style="margin-left: 8px;">🎪 Ticketmaster ✅</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="sympla" checked> 
+                                    <span style="margin-left: 8px;">🎭 Sympla ✅</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="foursquare" checked> 
+                                    <span style="margin-left: 8px;">📍 Foursquare ✅</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="wikipedia"> 
+                                    <span style="margin-left: 8px;">📚 Wikipedia (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="duckduckgo"> 
+                                    <span style="margin-left: 8px;">🦆 DuckDuckGo (Free)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="songkick" disabled> 
+                                    <span style="margin-left: 8px; opacity: 0.5;">🎸 Songkick (No Key)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="search-engine-checkbox" value="predicthq" disabled> 
+                                    <span style="margin-left: 8px; opacity: 0.5;">📈 PredictHQ (No Key)</span>
+                                </label>
+                            </div>
+                            
+                            <div class="button-group" style="margin-top: 20px;">
+                                <button class="btn btn-primary" onclick="saveAIConfig()">💾 Save Configuration</button>
+                                <button class="btn btn-secondary" onclick="loadAIConfig()">🔄 Reload</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        console.log('✅ Script block started');
+        
+        let isRunning = false;
+        let ws = null;
+        let joomlaAuth = { user: null, token: null };
+        let crawlerMode = 'find_new';
+        let startTime = 0;
+        let skipDeadArtists = true;
+        let logDetails = true;
+        
+        console.log('✅ Global variables initialized');
+        
+        // ========== AUTHENTICATION ==========
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const loginBtn = document.getElementById('login-submit');
+            const messageDiv = document.getElementById('login-message');
+            
+            if (!username || !password) {
+                showLoginMessage('Please enter username and password', 'error');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Signing in...';
+            messageDiv.classList.remove('error', 'success');
+            
+            console.log('🔐 Attempting login for user:', username);
+            
+            try {
+                console.log('📡 Sending login request to /api/admin/login');
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('📩 Login response status:', res.status);
+                const data = await res.json();
+                console.log('📩 Login response data:', JSON.stringify(data));
+                
+                if (data.ok) {
+                    console.log('✅ Login successful, token:', data.token);
+                    
+                    // Store session token
+                    localStorage.setItem('admin-token', data.token);
+                    localStorage.setItem('admin-user', data.user);
+                    console.log('💾 Token and user saved to localStorage');
+                    
+                    showLoginMessage('✅ Login successful! Redirecting...', 'success');
+                    console.log('📨 Message shown');
+                    
+                    console.log('⏳ Waiting 800ms before showing dashboard...');
+                    // Small delay for user feedback
+                    setTimeout(() => {
+                        console.log('🚀 Calling showDashboard with user:', data.user);
+                        showDashboard(data.user);
+                    }, 800);
+                } else {
+                    console.log('❌ Login failed:', data.error);
+                    showLoginMessage('❌ ' + (data.error || 'Login failed'), 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (err) {
+                console.error('❌ Login error:', err);
+                showLoginMessage('❌ Connection error: ' + err.message, 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        }
+        
+        function showLoginMessage(message, type) {
+            const messageDiv = document.getElementById('login-message');
+            messageDiv.textContent = message;
+            messageDiv.classList.remove('error', 'success');
+            messageDiv.classList.add(type);
+        }
+        
+        function showDashboard(username) {
+            try {
+                console.log('🔄 showDashboard called for user:', username);
+                
+                // Hide login, show dashboard - DIRECT DOM MANIPULATION
+                const loginContainer = document.getElementById('login-container');
+                const dashboard = document.getElementById('dashboard');
+                
+                console.log('🔍 Element check - login-container:', loginContainer ? 'FOUND' : 'NOT FOUND');
+                console.log('🔍 Element check - dashboard:', dashboard ? 'FOUND' : 'NOT FOUND');
+                
+                if (loginContainer) {
+                    loginContainer.style.display = 'none';
+                    console.log('✅ Login container hidden (display: none)');
+                }
+                
+                if (dashboard) {
+                    dashboard.style.display = 'flex';
+                    console.log('✅ Dashboard shown (display: flex)');
+                } else {
+                    console.error('❌ Dashboard element not found!');
+                    return;
+                }
+                
+                // Set user display
+                const userDisplay = document.getElementById('user-display');
+                if (userDisplay) {
+                    userDisplay.textContent = username;
+                    console.log('✅ User display set to:', username);
+                } else {
+                    console.warn('⚠️ user-display element not found');
+                }
+                
+                // Initialize dashboard (with error handling)
+                try {
+                    console.log('📡 Attempting WebSocket connection...');
+                    if (typeof connectWebSocket === 'function') {
+                        connectWebSocket();
+                    } else {
+                        console.warn('⚠️ connectWebSocket is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ WebSocket connection warning:', err.message);
+                }
+                
+                try {
+                    console.log('📊 Loading stats...');
+                    if (typeof loadStats === 'function') {
+                        loadStats();
+                    } else {
+                        console.warn('⚠️ loadStats is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Stats load warning:', err.message);
+                }
+                
+                try {
+                    console.log('⚙️ Loading AI config...');
+                    if (typeof loadAIConfig === 'function') {
+                        loadAIConfig();
+                    } else {
+                        console.warn('⚠️ loadAIConfig is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ AI config load warning:', err.message);
+                }
+                
+                // Setup intervals
+                if (typeof updateUptime === 'function') {
+                    setInterval(updateUptime, 1000);
+                }
+                if (typeof loadStats === 'function') {
+                    setInterval(loadStats, 30000);
+                }
+                
+                console.log('✅ Dashboard initialization complete');
+            } catch (err) {
+                console.error('❌ Error in showDashboard:', err);
+                alert('Error loading dashboard: ' + err.message);
+            }
+        }
+        
+        function handleLogout() {
+            console.log('🚪 handleLogout() called');
+            if (confirm('Are you sure you want to logout?')) {
+                console.log('✅ Logout confirmed');
+                localStorage.removeItem('admin-token');
+                console.log('💾 Token removed from localStorage');
+                localStorage.removeItem('admin-user');
+                console.log('💾 User removed from localStorage');
+                
+                const dashboard = document.getElementById('dashboard');
+                const loginContainer = document.getElementById('login-container');
+                console.log('🔍 Elements - dashboard:', dashboard ? 'FOUND' : 'NOT FOUND', 'loginContainer:', loginContainer ? 'FOUND' : 'NOT FOUND');
+                
+                if (dashboard) {
+                    dashboard.style.display = 'none';
+                    console.log('✅ Dashboard hidden (display: none)');
+                }
+                if (loginContainer) {
+                    loginContainer.style.display = 'flex';
+                    console.log('✅ Login container shown (display: flex)');
+                }
+                
+                // Clear form fields
+                const usernameInput = document.getElementById('login-username');
+                const passwordInput = document.getElementById('login-password');
+                if (usernameInput) usernameInput.value = '';
+                if (passwordInput) passwordInput.value = '';
+                console.log('✅ Login form fields cleared');
+                
+                // Reset login button
+                const loginBtn = document.getElementById('login-submit');
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                    console.log('✅ Login button reset');
+                }
+                
+                const messageDiv = document.getElementById('login-message');
+                if (messageDiv) {
+                    messageDiv.classList.remove('error', 'success');
+                    messageDiv.textContent = '';
+                }
+                
+                console.log('✅ Logout complete - login page should be visible now');
+            } else {
+                console.log('❌ Logout cancelled by user');
+            }
+        }
+        
+        function checkAuthStatus() {
+            const token = localStorage.getItem('admin-token');
+            const user = localStorage.getItem('admin-user');
+            
+            console.log('🔐 Checking auth status. Token:', token ? 'YES' : 'NO', 'User:', user);
+            
+            if (token && user) {
+                console.log('✅ Found stored session, showing dashboard for:', user);
+                showDashboard(user);
+            } else {
+                console.log('❌ No session found, showing login');
+                const loginContainer = document.getElementById('login-container');
+                const dashboard = document.getElementById('dashboard');
+                
+                if (loginContainer) loginContainer.style.display = 'flex';
+                if (dashboard) dashboard.style.display = 'none';
+            }
+        }
+        
+        // Check auth on page load
+        window.addEventListener('load', () => {
+            console.log('📄 Page loaded, checking auth...');
+            setTimeout(() => {
+                checkAuthStatus();
+            }, 100);
+        });
+        
+        console.log('✅ Auth functions defined');
+        
+        // ========== DASHBOARD FUNCTIONS ==========
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const tab = document.getElementById('tab-' + tabName);
+            if (tab) tab.classList.remove('hidden');
+            
+            // Set active nav item
+            event.target.classList.add('active');
+            
+            // Update title
+            const titles = {
+                crawler: '🌐 Artist Crawler v5.0',
+                populate: '🏙️ Populate Town',
+                stats: '📊 Statistics',
+                events: '📋 Events Inspector',
+                cache: '💾 Cache Management',
+                config: '⚙️ Configuration',
+                logs: '📝 System Logs'
+            };
+            
+            document.getElementById('tab-title').textContent = titles[tabName] || tabName;
+        }
+        
+        function updateCrawlerMode() {
+            crawlerMode = document.getElementById('crawler-mode').value;
+            skipDeadArtists = document.getElementById('skip-dead-artists').checked;
+            logDetails = document.getElementById('log-details').checked;
+            
+            const modeNames = {
+                find_new: '🆕 Finding new artists from Wikipedia...',
+                update_existing: '🔄 Updating existing artist events...',
+                both: '⚡ Finding new & updating existing...'
+            };
+            
+            addLog('Mode: ' + modeNames[crawlerMode], 'info');
+            if (skipDeadArtists) addLog('⚠️ Dead artists will be skipped', 'warning');
+            if (logDetails) addLog('📝 Detailed logging enabled', 'info');
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update topbar title
+            const titles = {
+                crawler: '🌐 Artist Crawler v5.0',
+                cache: '💾 Cache Management',
+                stats: '📊 Database Statistics',
+                logs: '📝 Activity Logs'
+            };
+            document.getElementById('tab-title').textContent = titles[tabName];
+        }
+        
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(protocol + '//' + window.location.host + '/ws/admin');
+            
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            };
+            
+            ws.onclose = () => setTimeout(connectWebSocket, 3000);
+        }
+        
+        function handleMessage(msg) {
+            if (msg.type === 'log') {
+                addLog(msg.message, 'info');
+            } else if (msg.type === 'progress') {
+                updateStats(msg.data);
+            } else if (msg.type === 'complete') {
+                isRunning = false;
+                updateRunningState();
+                showProgressBar(false);
+                addLog('✅ Crawling completed!', 'success');
+            } else if (msg.type === 'town-populate-log') {
+                addPopulateLog(msg.message, 'info');
+            } else if (msg.type === 'town-populate-error') {
+                addPopulateLog(msg.message, 'error');
+            } else if (msg.type === 'town-populate-complete') {
+                addPopulateLog(msg.message, 'success');
+                if (msg.result) {
+                    const summary = `✅ Complete: ${msg.result.totalSaved} events saved from ${msg.result.totalFound} found`;
+                    addPopulateLog(summary, 'success');
+                }
+            }
+        }
+        
+        function updateStats(data) {
+            if (data.artistsFound) document.getElementById('stat-artists').textContent = data.artistsFound.toLocaleString();
+            if (data.eventsFound) document.getElementById('stat-events').textContent = data.eventsFound.toLocaleString();
+            if (data.currentCount) document.getElementById('current-count').textContent = data.currentCount;
+            if (data.currentEvents) document.getElementById('current-events').textContent = data.currentEvents;
+            if (data.cacheHits) document.getElementById('current-cache').textContent = data.cacheHits;
+            if (data.skippedDead) document.getElementById('skipped-dead').textContent = data.skippedDead;
+            if (data.speed) document.getElementById('stat-speed').textContent = data.speed.toFixed(0) + '/min';
+            if (data.cacheHitRate) document.getElementById('stat-cache').textContent = (data.cacheHitRate * 100).toFixed(1) + '%';
+        }
+        
+        function showProgressBar(show) {
+            const bar = document.getElementById('progress-bar');
+            if (show) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+        
+        async function startCrawler() {
+            updateCrawlerMode();
+            
+            // Collect Python Serpents options
+            const usePython = document.getElementById('use-python').checked;
+            const useDragons = document.getElementById('use-dragons').checked;
+            const pythonMaxParallel = parseInt(document.getElementById('python-max-parallel').value) || 10;
+            const pythonLimit = document.getElementById('python-limit').value ? parseInt(document.getElementById('python-limit').value) : null;
+            
+            // Collect Python sources
+            const pythonSources = [];
+            document.querySelectorAll('.python-source:checked').forEach(cb => {
+                pythonSources.push(cb.value);
+            });
+            
+            // Collect crawler refining options
+            const country = document.getElementById('crawler-country').value || null;
+            const artistsLimit = document.getElementById('crawler-artists-limit').value ? parseInt(document.getElementById('crawler-artists-limit').value) : null;
+            const eventsLimit = parseInt(document.getElementById('crawler-events-limit').value) || 50;
+            const collectArtists = document.getElementById('collect-artists').checked;
+            const collectEvents = document.getElementById('collect-events').checked;
+            const enableWikipedia = document.getElementById('enable-wikipedia').checked;
+            const enableLastfm = document.getElementById('enable-lastfm').checked;
+            const existingArtistsLimit = parseInt(document.getElementById('existing-artists-limit').value) || 500;
+            
+            const payload = {
+                mode: crawlerMode,
+                skipDeadArtists: skipDeadArtists,
+                logDetails: logDetails,
+                batchSize: parseInt(document.getElementById('batch-size').value),
+                
+                // Python Serpents options
+                usePython: usePython,
+                useDragons: useDragons,
+                pythonMaxParallel: pythonMaxParallel,
+                pythonLimit: pythonLimit,
+                pythonSources: pythonSources,
+                
+                // Refining options
+                country: country,
+                artistsLimit: artistsLimit,
+                eventsLimit: eventsLimit,
+                collectArtists: collectArtists,
+                collectEvents: collectEvents,
+                enableWikipedia: enableWikipedia,
+                enableLastfm: enableLastfm,
+                existingArtistsLimit: existingArtistsLimit
+            };
+            
+            const res = await fetch('/api/admin/intelligent/enhanced?dev=true', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            if (data.ok) {
+                isRunning = true;
+                updateRunningState();
+                showProgressBar(true);
+                startTime = Date.now();
+                
+                const modeText = crawlerMode === 'find_new' ? 'NEW ARTISTS' : crawlerMode === 'update_existing' ? 'UPDATE' : 'HYBRID';
+                const pythonText = usePython ? (useDragons ? '🐍🦅📚 Python Serpents & Dragons' : '🐍 Python Serpents') : 'Node.js';
+                addLog(`🚀 Crawler started in ${modeText} mode with ${pythonText}`, 'success');
+                
+                if (country) addLog(`🌍 Country filter: ${country}`, 'info');
+                if (artistsLimit) addLog(`🎤 Artists limit: ${artistsLimit}`, 'info');
+                if (usePython && pythonSources.length > 0) addLog(`📡 Python sources: ${pythonSources.join(', ')}`, 'info');
+            } else {
+                addLog('❌ Error: ' + data.error, 'error');
+            }
+        }
+
+        async function startBreedArtists() {
+            const useWiki = document.getElementById('breed-use-wiki').checked;
+            const useLastfm = document.getElementById('breed-use-lastfm').checked;
+            const limitInput = document.getElementById('breed-artists-limit').value;
+            const existingArtistsLimit = limitInput ? parseInt(limitInput) : 500;
+            
+            const payload = {
+                mode: 'find_new',
+                collectArtists: true,
+                collectEvents: false,
+                enableWikipedia: useWiki,
+                enableLastfm: useLastfm,
+                existingArtistsLimit: existingArtistsLimit,
+                batchSize: 5,
+                logDetails: true,
+                skipDeadArtists: true
+            };
+            
+            const res = await fetch('/api/admin/intelligent/enhanced?dev=true', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.ok) {
+                isRunning = true;
+                startTime = Date.now();
+                updateRunningState();
+                showProgressBar(true);
+                addLog('🎵 Breed Artists started (artists only)', 'success');
+                const sourceText = `${useWiki ? '📚 Wikipedia ' : ''}${useLastfm ? '🎸 Last.fm' : ''}`.trim() || 'default sources';
+                addLog(`📡 Sources: ${sourceText}`, 'info');
+            } else {
+                addLog('❌ Breed Artists error: ' + data.error, 'error');
+            }
+        }
+        
+        async function pauseCrawler() {
+            fetch('/api/admin/intelligent/pause?dev=true', { method: 'POST' });
+            showProgressBar(false);
+            addLog('⏸️ Crawler paused', 'warning');
+        }
+        
+        async function stopCrawler() {
+            if (confirm('Stop crawling?')) {
+                await fetch('/api/admin/intelligent/stop?dev=true', { method: 'POST' });
+                isRunning = false;
+                updateRunningState();
+                showProgressBar(false);
+                addLog('⏹️ Crawler stopped', 'warning');
+            }
+        }
+        
+        async function getStats() {
+            const res = await fetch('/api/admin/cache/stats?dev=true');
+            const data = await res.json();
+            if (data.ok && data.stats) {
+                document.getElementById('cache-hits').textContent = data.stats.cacheHits || 0;
+                document.getElementById('cache-misses').textContent = data.stats.cacheMisses || 0;
+                document.getElementById('cache-size').textContent = data.stats.cacheSize || 0;
+                const hitRate = data.stats.cacheHitRate || 0;
+                document.getElementById('cache-health').textContent = (hitRate * 100).toFixed(0) + '%';
+            }
+        }
+        
+        async function clearCache() {
+            if (confirm('Clear all cache and checkpoint?')) {
+                const res = await fetch('/api/admin/cache/clear?dev=true', { method: 'POST' });
+                const data = await res.json();
+                addLog(data.message, data.ok ? 'success' : 'error');
+            }
+        }
+        
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats?dev=true');
+            const data = await res.json();
+            if (data.ok) {
+                document.getElementById('db-artists').textContent = data.artists.toLocaleString();
+                document.getElementById('db-events').textContent = data.events.toLocaleString();
+                document.getElementById('db-recent').textContent = data.recentEvents.toLocaleString();
+                
+                // Display detailed stats
+                const detailsDiv = document.getElementById('stats-details');
+                
+                // Populate country stats
+                const countryHtml = data.byCountry.map(item => {
+                    const percentage = ((item.count / data.events) * 100).toFixed(1);
+                    return `<div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span>🌍 ${item.country || 'Unknown'}</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 150px; background: rgba(6,182,212,0.2); border-radius: 3px; height: 20px; position: relative; display: flex; align-items: center;">
+                                <div style="width: ${Math.min(percentage, 100)}%; background: linear-gradient(90deg, #06b6d4, #10b981); height: 100%; border-radius: 3px;"></div>
+                                <span style="position: absolute; left: 5px; font-size: 0.75rem; color: var(--text-primary); font-weight: bold;">${percentage}%</span>
+                            </div>
+                            <span style="color: var(--accent); font-weight: bold; min-width: 50px; text-align: right;">${item.count.toLocaleString()}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+                
+                document.getElementById('country-stats').innerHTML = countryHtml || '<p style="color: var(--text-muted);">No data available</p>';
+                
+                // Populate source stats
+                const sourceHtml = data.bySource.map(item => {
+                    const percentage = ((item.count / data.events) * 100).toFixed(1);
+                    return `<div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                        <span>📌 ${item.source || 'Unknown'}</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 150px; background: rgba(245,158,11,0.2); border-radius: 3px; height: 20px; position: relative; display: flex; align-items: center;">
+                                <div style="width: ${Math.min(percentage, 100)}%; background: linear-gradient(90deg, #f59e0b, #ef4444); height: 100%; border-radius: 3px;"></div>
+                                <span style="position: absolute; left: 5px; font-size: 0.75rem; color: var(--text-primary); font-weight: bold;">${percentage}%</span>
+                            </div>
+                            <span style="color: #f59e0b; font-weight: bold; min-width: 50px; text-align: right;">${item.count.toLocaleString()}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+                
+                document.getElementById('source-stats').innerHTML = sourceHtml || '<p style="color: var(--text-muted);">No data available</p>';
+                
+                // Show the details section
+                detailsDiv.style.display = 'block';
+                addLog('📊 Statistics loaded: ' + data.events + ' events, ' + data.artists + ' artists', 'success');
+            }
+        }
+        
+        // Events inspector storage
+        let allEvents = [];
+        let filteredEvents = [];
+        
+        async function loadEventsInspector() {
+            try {
+                document.getElementById('events-inspector').innerHTML = '<div style="text-align: center; padding: 20px;"><span style="color: var(--accent);">⏳ Loading events...</span></div>';
+                
+                const res = await fetch('/api/admin/events?limit=500&dev=true');
+                const data = await res.json();
+                
+                if (data.ok && data.events) {
+                    allEvents = data.events;
+                    filteredEvents = [...allEvents];
+                    displayEvents(filteredEvents);
+                    addLog(`✅ Loaded ${data.count} events for inspection`, 'success');
+                    document.getElementById('event-count').textContent = data.count;
+                } else {
+                    document.getElementById('events-inspector').innerHTML = '<div style="color: var(--danger); padding: 20px;">❌ Failed to load events: ' + (data.error || 'Unknown error') + '</div>';
+                }
+            } catch (err) {
+                document.getElementById('events-inspector').innerHTML = '<div style="color: var(--danger); padding: 20px;">❌ Error: ' + err.message + '</div>';
+                addLog('❌ Failed to load events: ' + err.message, 'error');
+            }
+        }
+        
+        function displayEvents(events) {
+            if (events.length === 0) {
+                document.getElementById('events-inspector').innerHTML = '<div style="color: var(--text-muted); padding: 20px; text-align: center;">No events found</div>';
+                document.getElementById('event-filtered').textContent = 0;
+                return;
+            }
+            
+            // Group events by artist
+            const grouped = {};
+            events.forEach(event => {
+                const artist = event.artist_name || 'Unknown Artist';
+                if (!grouped[artist]) {
+                    grouped[artist] = [];
+                }
+                grouped[artist].push(event);
+            });
+            
+            let html = '';
+            let artistIndex = 0;
+            
+            Object.keys(grouped).sort().forEach(artist => {
+                const artistEvents = grouped[artist];
+                const sourceEmoji = {
+                    'bandsintown': '🎵',
+                    'lastfm': '🎸',
+                    'sample-data': '🤖',
+                    'sympla': '🎫',
+                    'eventbrite': '🎟️',
+                    'songkick': '🎸',
+                    'shotgun': '🎬',
+                    'ticketmaster': '🎪',
+                    'duckduckgo': '🔍',
+                    'default': '📍'
+                };
+                
+                const artistId = `artist-${artistIndex++}`;
+                
+                html += `<div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 10px; overflow: hidden;">
+                    <div style="background: rgba(6, 182, 212, 0.15); padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; user-select: none; transition: all 0.2s;" 
+                         onclick="toggleArtist('${artistId}')" 
+                         onmouseover="this.style.background='rgba(6, 182, 212, 0.25)'" 
+                         onmouseout="this.style.background='rgba(6, 182, 212, 0.15)'">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                                <span id="${artistId}-toggle" style="color: var(--accent); font-weight: bold;">▶️</span>
+                                <strong style="color: var(--accent);">👨‍🎤 ${artist}</strong>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">(${artistEvents.length} event${artistEvents.length !== 1 ? 's' : ''})</span>
+                            </div>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">Click to expand</span>
+                        </div>
+                    </div>
+                    <div id="${artistId}" style="padding: 8px 0; display: none; max-height: 500px; overflow-y: auto;">`;
+                
+                artistEvents.forEach((event, idx) => {
+                    const sourceIcon = sourceEmoji[event.source] || sourceEmoji.default;
+                    const location = `${event.venue_city || 'TBA'}, ${event.venue_country || 'Unknown'}`;
+                    const eventDate = event.event_date ? new Date(event.event_date).toLocaleDateString() : 'TBA';
+                    
+                    html += `<div style="padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: flex-start; font-size: 0.85rem; transition: background 0.2s;"
+                                 onmouseover="this.style.background='rgba(6, 182, 212, 0.05)'"
+                                 onmouseout="this.style.background='transparent'">
+                        <div style="flex: 1;">
+                            <div style="color: var(--text-primary); margin-bottom: 3px;">
+                                <strong>${event.event_name || 'Unnamed Event'}</strong>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 0.75rem;">
+                                📍 ${location} | 📅 ${eventDate}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
+                            <span style="padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 3px; font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">${sourceIcon} ${event.source}</span>
+                            <button class="btn" onclick="deleteEvent(${event.id})" style="padding: 3px 8px; font-size: 0.75rem; background: var(--danger); color: white; border: none; border-radius: 3px; cursor: pointer;">🗑️</button>
+                        </div>
+                    </div>`;
+                });
+                
+                html += `</div></div>`;
+            });
+            
+            document.getElementById('events-inspector').innerHTML = html;
+            document.getElementById('event-filtered').textContent = events.length;
+        }
+        
+        function toggleArtist(artistId) {
+            const element = document.getElementById(artistId);
+            const toggle = document.getElementById(artistId + '-toggle');
+            
+            if (element.style.display === 'none') {
+                element.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                element.style.display = 'none';
+                toggle.textContent = '▶️';
+            }
+        }
+        
+        function filterEventsBySource(source) {
+            if (source === 'all') {
+                filteredEvents = [...allEvents];
+            } else {
+                filteredEvents = allEvents.filter(e => e.source === source);
+            }
+            displayEvents(filteredEvents);
+            addLog(`📌 Filtered to ${source} events: ${filteredEvents.length} events`, 'info');
+        }
+        
+        function filterEventsBySearch() {
+            const searchTerm = document.getElementById('event-search').value.toLowerCase();
+            if (!searchTerm) {
+                filteredEvents = [...allEvents];
+            } else {
+                filteredEvents = allEvents.filter(e => 
+                    (e.artist_name && e.artist_name.toLowerCase().includes(searchTerm)) ||
+                    (e.event_name && e.event_name.toLowerCase().includes(searchTerm)) ||
+                    (e.venue_name && e.venue_name.toLowerCase().includes(searchTerm)) ||
+                    (e.venue_city && e.venue_city.toLowerCase().includes(searchTerm))
+                );
+            }
+            displayEvents(filteredEvents);
+        }
+        
+        async function deleteEvent(eventId) {
+            if (confirm('Delete this event? This action cannot be undone.')) {
+                try {
+                    const res = await fetch(`/api/admin/event/${eventId}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.ok) {
+                        // Remove from arrays and refresh display
+                        allEvents = allEvents.filter(e => e.id !== eventId);
+                        filteredEvents = filteredEvents.filter(e => e.id !== eventId);
+                        displayEvents(filteredEvents);
+                        addLog('🗑️ Event deleted successfully', 'success');
+                        // Update count
+                        document.getElementById('event-count').textContent = allEvents.length;
+                    } else {
+                        addLog('❌ Failed to delete event: ' + data.error, 'error');
+                    }
+                } catch (err) {
+                    addLog('❌ Error deleting event: ' + err.message, 'error');
+                }
+            }
+        }
+        
+        function addLog(message, type = 'info') {
+            const logBox = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-time">${time}</span> ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            
+            // Keep max 200 entries (increased from 100)
+            while (logBox.children.length > 200) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        }
+        
+        function updateRunningState() {
+            const badge = document.getElementById('status-badge');
+            const statusText = document.getElementById('status-text');
+            
+            if (isRunning) {
+                badge.className = 'badge badge-running';
+                badge.textContent = 'RUNNING';
+                statusText.textContent = 'Running...';
+                document.getElementById('current-status').textContent = 'Processing...';
+                document.getElementById('btn-start').disabled = true;
+                document.getElementById('btn-pause').disabled = false;
+                document.getElementById('btn-stop').disabled = false;
+            } else {
+                badge.className = 'badge badge-idle';
+                badge.textContent = 'IDLE';
+                statusText.textContent = 'Ready';
+                document.getElementById('current-status').textContent = 'Ready';
+                document.getElementById('btn-start').disabled = false;
+                document.getElementById('btn-pause').disabled = true;
+                document.getElementById('btn-stop').disabled = true;
+                startTime = 0;
+            }
+        }
+        
+        function togglePythonOptions() {
+            const usePython = document.getElementById('use-python').checked;
+            const advancedOptions = document.getElementById('python-advanced-options');
+            const sourcesRow = document.getElementById('python-sources-row');
+            
+            if (usePython) {
+                advancedOptions.style.display = 'flex';
+                sourcesRow.style.display = 'flex';
+            } else {
+                advancedOptions.style.display = 'none';
+                sourcesRow.style.display = 'none';
+            }
+        }
+        
+        function togglePopulatePythonOptions() {
+            const usePython = document.getElementById('populate-use-python').checked;
+            const advancedOptions = document.getElementById('populate-python-advanced-options');
+            const sourcesRow = document.getElementById('populate-python-sources-row');
+            
+            if (usePython) {
+                advancedOptions.style.display = 'flex';
+                sourcesRow.style.display = 'flex';
+            } else {
+                advancedOptions.style.display = 'none';
+                sourcesRow.style.display = 'none';
+            }
+        }
+        
+        function updateUptime() {
+            if (isRunning && startTime > 0) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                document.getElementById('current-uptime').textContent = mins + 'm ' + secs + 's';
+            }
+        }
+        
+        // ========== POPULATE TOWN FUNCTIONS ==========
+        
+        async function startPopulateTown() {
+            const town = document.getElementById('populate-town').value.trim();
+            const country = document.getElementById('populate-country').value.trim();
+            const maxEvents = document.getElementById('populate-max-events').value;
+            
+            // Collect Python Serpents options
+            const usePython = document.getElementById('populate-use-python').checked;
+            const useDragons = document.getElementById('populate-use-dragons').checked;
+            const pythonMaxParallel = parseInt(document.getElementById('populate-python-max-parallel').value) || 10;
+            
+            // Collect Python sources
+            const pythonSources = [];
+            document.querySelectorAll('.populate-python-source:checked').forEach(cb => {
+                pythonSources.push(cb.value);
+            });
+            
+            if (!town) {
+                alert('Please enter a town name');
+                return;
+            }
+            
+            try {
+                document.getElementById('populate-progress').style.display = 'block';
+                document.getElementById('populate-status').style.display = 'none';
+                
+                const pythonText = usePython ? (useDragons ? '🐍🦅📚 Python Serpents & Dragons' : '🐍 Python Serpents') : 'Node.js';
+                const logBox = document.getElementById('populate-log');
+                logBox.innerHTML = `<div class="log-entry info"><span class="log-time">--:--</span> Starting ${pythonText} population for ${town}, ${country || 'Brazil'}...</div>`;
+                
+                const res = await fetch('/api/admin/populate-town?dev=true', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        town: town,
+                        country: country || 'Brazil',
+                        maxEvents: maxEvents ? parseInt(maxEvents) : null,
+                        usePython: usePython,
+                        useDragons: useDragons,
+                        maxParallel: pythonMaxParallel,
+                        pythonSources: pythonSources
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.ok) {
+                    addLog(`🏙️ ${pythonText} Population started for ${town}, ${country || 'Brazil'}`, 'success');
+                    if (pythonSources.length > 0) {
+                        addPopulateLog(`📡 Python sources: ${pythonSources.join(', ')}`, 'info');
+                    }
+                } else {
+                    addLog(`❌ Population error: ${data.error}`, 'error');
+                    addPopulateLog(`❌ Error: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                addLog(`❌ Error: ${err.message}`, 'error');
+                addPopulateLog(`❌ Error: ${err.message}`, 'error');
+            }
+        }
+        
+        async function checkTownStatus() {
+            const town = document.getElementById('populate-town').value.trim();
+            
+            if (!town) {
+                alert('Please enter a town name');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/admin/town-status/${encodeURIComponent(town)}?dev=true`);
+                const data = await res.json();
+                
+                if (data.ok) {
+                    let statusHtml = `
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: var(--accent);">📍 ${town}</strong><br/>
+                            <span style="color: var(--success); font-size: 1.5rem; font-weight: bold;">${data.totalEvents}</span>
+                            <span style="color: var(--text-muted);">total events</span>
+                        </div>
+                    `;
+                    
+                    if (data.bySource && data.bySource.length > 0) {
+                        statusHtml += '<h4 style="color: var(--accent); margin: 10px 0;">Events by Source:</h4>';
+                        data.bySource.forEach(source => {
+                            const sourceEmoji = {
+                                'sympla': '🎫',
+                                'eventbrite': '🎟️',
+                                'bandsintown': '🎵',
+                                'songkick': '🎸',
+                                'shotgun': '🎬',
+                                'ticketmaster': '🎪',
+                                'duckduckgo': '🔍'
+                            };
+                            const emoji = sourceEmoji[source.source] || '📍';
+                            statusHtml += `<div style="padding: 5px 0; display: flex; justify-content: space-between;">
+                                <span>${emoji} ${source.source}</span>
+                                <strong style="color: var(--accent);">${source.count}</strong>
+                            </div>`;
+                        });
+                    }
+                    
+                    document.getElementById('populate-status-content').innerHTML = statusHtml;
+                    document.getElementById('populate-status').style.display = 'block';
+                    addLog(`📊 Status check complete for ${town}`, 'success');
+                } else {
+                    document.getElementById('populate-status-content').innerHTML = `<p style="color: var(--danger);">❌ ${data.error}</p>`;
+                    document.getElementById('populate-status').style.display = 'block';
+                }
+            } catch (err) {
+                document.getElementById('populate-status-content').innerHTML = `<p style="color: var(--danger);">❌ Error: ${err.message}</p>`;
+                document.getElementById('populate-status').style.display = 'block';
+            }
+        }
+        
+        
+        function addPopulateLog(message, type = 'info') {
+            const logBox = document.getElementById('populate-log');
+            if (!logBox) return;
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-time">${time}</span> ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            
+            // Keep max 100 entries
+            while (logBox.children.length > 100) {
+                logBox.removeChild(logBox.firstChild);
+            }
+        }
+        
+        function copyPopulateLog(button) {
+            try {
+                console.log('📋 copyPopulateLog called with button:', button);
+                
+                const logBox = document.getElementById('populate-log');
+                if (!logBox) {
+                    console.error('❌ Log box not found');
+                    alert('Log box not found');
+                    return;
+                }
+                
+                console.log('✅ Log box found');
+                
+                // Get all log entries
+                const entries = logBox.querySelectorAll('.log-entry');
+                console.log('📄 Found', entries.length, 'log entries');
+                
+                let logText = '';
+                
+                entries.forEach(entry => {
+                    const timeSpan = entry.querySelector('.log-time');
+                    const time = timeSpan ? timeSpan.textContent : '--:--';
+                    const message = entry.textContent.replace(time, '').trim();
+                    logText += `[${time}] ${message}\n`;
+                });
+                
+                console.log('📝 Log text prepared:', logText.length, 'characters');
+                
+                // Try clipboard API first, then fallback to textarea method
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    console.log('✅ Using Clipboard API');
+                    navigator.clipboard.writeText(logText).then(() => {
+                        console.log('✅ Text copied to clipboard');
+                        const originalText = button.textContent;
+                        button.textContent = '✅ Copied!';
+                        button.style.background = 'var(--success)';
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.style.background = '';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('❌ Clipboard API failed:', err);
+                        fallbackCopyMethod(logText, button);
+                    });
+                } else {
+                    console.log('⚠️ Clipboard API not available, using fallback');
+                    fallbackCopyMethod(logText, button);
+                }
+            } catch (err) {
+                console.error('❌ copyPopulateLog error:', err);
+                alert('Copy function error: ' + err.message);
+            }
+        }
+        
+        function fallbackCopyMethod(text, button) {
+            try {
+                // Create a temporary textarea element
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                textarea.setSelectionRange(0, 99999);
+                
+                // Use the old execCommand method
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                if (successful) {
+                    console.log('✅ Text copied using fallback method');
+                    const originalText = button.textContent;
+                    button.textContent = '✅ Copied!';
+                    button.style.background = 'var(--success)';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                } else {
+                    console.error('❌ Fallback copy failed');
+                    alert('Copy failed. Please manually select and copy the text.');
+                }
+            } catch (err) {
+                console.error('❌ Fallback copy error:', err);
+                alert('Copy failed: ' + err.message);
+            }
+        }
+        
+        // ========== AI CONFIG FUNCTIONS ==========
+        
+        async function loadAIConfig() {
+            try {
+                console.log('⚙️ loadAIConfig() called');
+                
+                const token = localStorage.getItem('admin-token');
+                console.log('🔐 Token from localStorage:', token ? 'EXISTS' : 'NULL');
+                
+                if (!token) {
+                    console.error('❌ No admin token found! Cannot load config.');
+                    return;
+                }
+                
+                const res = await fetch('/api/admin/ai-config?dev=true', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await res.json();
+                
+                console.log('📥 Loaded config:', data);
+                
+                if (data.ok && data.config) {
+                    const config = data.config;
+                    
+                    // Load selected models
+                    if (config.selectedModels && Array.isArray(config.selectedModels)) {
+                        document.querySelectorAll('.ai-model-checkbox').forEach(checkbox => {
+                            checkbox.checked = config.selectedModels.includes(checkbox.value);
+                        });
+                        console.log('✅ Loaded models:', config.selectedModels);
+                    }
+                    
+                    // Load selected search engines
+                    if (config.selectedEngines && Array.isArray(config.selectedEngines)) {
+                        document.querySelectorAll('.search-engine-checkbox').forEach(checkbox => {
+                            checkbox.checked = config.selectedEngines.includes(checkbox.value);
+                        });
+                        console.log('✅ Loaded engines:', config.selectedEngines);
+                    }
+                    
+                    addLog('✅ Configuration loaded', 'success');
+                } else {
+                    console.warn('⚠️ No saved config found, using defaults');
+                    
+                    // Set default FREE AI models via OpenRouter (checked by default in HTML)
+                    const freeModels = ['deepseek/deepseek-chat', 'meta-llama/llama-3.1-8b-instruct:free'];
+                    document.querySelectorAll('.ai-model-checkbox').forEach(checkbox => {
+                        checkbox.checked = freeModels.includes(checkbox.value);
+                    });
+                    
+                    // Set configured search engines checked by default
+                    const configuredEngines = ['eventbrite', 'ticketmaster', 'sympla', 'foursquare'];
+                    document.querySelectorAll('.search-engine-checkbox').forEach(checkbox => {
+                        checkbox.checked = configuredEngines.includes(checkbox.value);
+                    });
+                    
+                    console.log('✅ Default configuration applied: OpenRouter FREE AI models + configured APIs');
+                    addLog('⚙️ Using default configuration (FREE AI models + all search engines)', 'info');
+                }
+            } catch (err) {
+                addLog(`❌ Error loading config: ${err.message}`, 'error');
+                console.error('❌ Exception:', err);
+            }
+        }
+        
+        async function saveAIConfig() {
+            try {
+                console.log('💾 saveAIConfig() called');
+                
+                // Collect selected models
+                const selectedModels = [];
+                document.querySelectorAll('.ai-model-checkbox:checked').forEach(checkbox => {
+                    selectedModels.push(checkbox.value);
+                });
+                
+                console.log('🔍 Selected models:', selectedModels);
+                
+                // Collect selected search engines
+                const selectedEngines = [];
+                document.querySelectorAll('.search-engine-checkbox:checked').forEach(checkbox => {
+                    selectedEngines.push(checkbox.value);
+                });
+                
+                console.log('🔍 Selected engines:', selectedEngines);
+                
+                if (selectedModels.length === 0) {
+                    alert('Please select at least one AI model');
+                    addLog('❌ No AI models selected', 'error');
+                    return;
+                }
+                
+                const config = {
+                    selectedModels: selectedModels,
+                    selectedEngines: selectedEngines
+                };
+                
+                const token = localStorage.getItem('admin-token');
+                console.log('🔐 Using token:', token ? 'YES' : 'NO');
+                
+                if (!token) {
+                    console.error('❌ No admin token found! Cannot save config.');
+                    addLog('❌ Not authenticated - please login again', 'error');
+                    return;
+                }
+                
+                const res = await fetch('/api/admin/ai-config', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                console.log('📨 Response status:', res.status);
+                const data = await res.json();
+                console.log('📨 Response data:', data);
+                
+                if (data.ok) {
+                    addLog(`✅ Configuration saved! Selected ${selectedModels.length} models & ${selectedEngines.length} engines`, 'success');
+                    console.log('✅ Config saved successfully');
+                } else {
+                    addLog(`❌ Error: ${data.error}`, 'error');
+                    console.log('❌ Save failed:', data.error);
+                }
+            } catch (err) {
+                addLog(`❌ Error saving config: ${err.message}`, 'error');
+                console.error('❌ Exception:', err);
+            }
+        }
+        
+        function updateSearchEngines() {
+            const selected = [];
+            document.querySelectorAll('.search-engine-checkbox:checked').forEach(checkbox => {
+                selected.push(checkbox.value);
+            });
+            
+            addLog(`✅ Selected search engines: ${selected.join(', ')}`, 'success');
+            console.log('Selected search engines:', selected);
+        }
+        
+        // ========== AUTHENTICATION ==========
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            const loginBtn = document.getElementById('login-submit');
+            const messageDiv = document.getElementById('login-message');
+            
+            if (!username || !password) {
+                showLoginMessage('Please enter username and password', 'error');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Signing in...';
+            messageDiv.classList.remove('error', 'success');
+            
+            console.log('🔐 Attempting login for user:', username);
+            
+            try {
+                console.log('📡 Sending login request to /api/admin/login');
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('📩 Login response status:', res.status);
+                const data = await res.json();
+                console.log('📩 Login response data:', data);
+                
+                if (data.ok) {
+                    console.log('✅ Login successful, token:', data.token);
+                    
+                    // Store session token
+                    localStorage.setItem('admin-token', data.token);
+                    localStorage.setItem('admin-user', data.user);
+                    
+                    showLoginMessage('✅ Login successful! Redirecting...', 'success');
+                    
+                    console.log('⏳ Waiting 800ms before showing dashboard...');
+                    // Small delay for user feedback
+                    setTimeout(() => {
+                        console.log('🚀 Calling showDashboard');
+                        showDashboard(data.user);
+                    }, 800);
+                } else {
+                    console.log('❌ Login failed:', data.error);
+                    showLoginMessage('❌ ' + (data.error || 'Login failed'), 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (err) {
+                console.error('❌ Login error:', err);
+                showLoginMessage('❌ Connection error: ' + err.message, 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        }
+        
+        function showLoginMessage(message, type) {
+            const messageDiv = document.getElementById('login-message');
+            messageDiv.textContent = message;
+            messageDiv.classList.remove('error', 'success');
+            messageDiv.classList.add(type);
+        }
+        
+        function showDashboard(username) {
+            try {
+                console.log('🔄 Showing dashboard for user:', username);
+                
+                // Hide login, show dashboard - DIRECT DOM MANIPULATION
+                const loginContainer = document.getElementById('login-container');
+                const dashboard = document.getElementById('dashboard');
+                
+                if (loginContainer) {
+                    loginContainer.style.display = 'none';
+                    console.log('✅ Login container hidden');
+                }
+                
+                if (dashboard) {
+                    dashboard.style.display = 'flex';
+                    console.log('✅ Dashboard shown');
+                } else {
+                    console.error('❌ Dashboard element not found!');
+                    return;
+                }
+                
+                // Set user display
+                const userDisplay = document.getElementById('user-display');
+                if (userDisplay) {
+                    userDisplay.textContent = username;
+                    console.log('✅ User display set to:', username);
+                }
+                
+                // Initialize dashboard (with error handling)
+                try {
+                    console.log('📡 Attempting WebSocket connection...');
+                    if (typeof connectWebSocket === 'function') {
+                        connectWebSocket();
+                    } else {
+                        console.warn('⚠️ connectWebSocket is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ WebSocket connection warning:', err.message);
+                }
+                
+                try {
+                    console.log('📊 Loading stats...');
+                    if (typeof loadStats === 'function') {
+                        loadStats();
+                    } else {
+                        console.warn('⚠️ loadStats is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Stats load warning:', err.message);
+                }
+                
+                try {
+                    console.log('⚙️ Loading AI config...');
+                    if (typeof loadAIConfig === 'function') {
+                        loadAIConfig();
+                    } else {
+                        console.warn('⚠️ loadAIConfig is not defined');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ AI config load warning:', err.message);
+                }
+                
+                // Setup intervals
+                if (typeof updateUptime === 'function') {
+                    setInterval(updateUptime, 1000);
+                }
+                if (typeof loadStats === 'function') {
+                    setInterval(loadStats, 30000);
+                }
+                
+                console.log('✅ Dashboard initialization complete');
+            } catch (err) {
+                console.error('❌ Error in showDashboard:', err);
+                alert('Error loading dashboard: ' + err.message);
+            }
+        }
+        
+        function checkAuthStatus() {
+            const token = localStorage.getItem('admin-token');
+            const user = localStorage.getItem('admin-user');
+            
+            console.log('🔐 Checking auth status. Token:', token ? 'YES' : 'NO', 'User:', user);
+            
+            if (token && user) {
+                console.log('✅ Found stored session, showing dashboard for:', user);
+                showDashboard(user);
+            } else {
+                console.log('❌ No session found, showing login');
+                const loginContainer = document.getElementById('login-container');
+                const dashboard = document.getElementById('dashboard');
+                
+                if (loginContainer) loginContainer.style.display = 'flex';
+                if (dashboard) dashboard.style.display = 'none';
+            }
+        }
+        
+        // Check auth on page load
+        window.addEventListener('load', () => {
+            console.log('📄 Page loaded, checking auth...');
+            setTimeout(() => {
+                checkAuthStatus();
+            }, 100);
+        });
+    </script>
+        </div>
+    </div>
+</body>
+</html>

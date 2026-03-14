@@ -1,0 +1,13 @@
+{
+  "name": "keepup-socket-proxy",
+  "version": "0.1.0",
+  "description": "Simple WebSocket proxy that verifies socket tickets via auth-proxy before accepting connections",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "node-fetch": "^3.4.2"
+  }
+}
