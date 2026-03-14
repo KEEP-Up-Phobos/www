@@ -365,7 +365,7 @@ def get_postgres_connection():
         host=os.getenv('PG_DB_HOST', 'localhost'),
         port=int(os.getenv('PG_DB_PORT', '5432')),
         user=os.getenv('PG_DB_USER', 'keepup_user'),
-        password=os.getenv('PG_DB_PASSWORD', 'keepup_pass_2026'),
+        password=os.getenv('PG_DB_PASSWORD', ''),
         database=os.getenv('PG_DB_NAME', 'keepup_events'),
     )
 
