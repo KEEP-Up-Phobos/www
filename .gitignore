@@ -28,3 +28,4 @@ server.pid
 # OS
 .DS_Store
 Thumbs.db
+backend/_node_backup/core.1
