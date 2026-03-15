@@ -1,0 +1,587 @@
+========== event_serpents.py ==========
+#!/usr/bin/env python3
+"""
+🐍🦅📚 THE PYTHON SERPENTS & DRAGONS - Lightning-Fast Event Fetchers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Trained creatures released by THE KEEPER for parallel,
+asynchronous event fetching across multiple sources simultaneously.
+
+🐍 SERPENTS: Strike APIs with venom (Ticketmaster, Sympla)
+🦅 FEATHER-DRAGON: Swift DuckDuckGo web searches (The Duck's wings)
+📚 SAGE-DRAGON: Ancient Wikipedia knowledge extraction (The Scholar's wisdom)
+
+"Where Node.js fetches one by one, Python creatures strike all at once."
+"""
+
+import asyncio
+import aiohttp
+import os
+import json
+import re
+from datetime import datetime
+from typing import List, Dict, Optional
+from dotenv import load_dotenv
+from urllib.parse import quote, urljoin
+
+load_dotenv()
+
+
+class PythonSerpent:
+    """🐍 A single serpent trained to fetch from one Event Sorcerer"""
+    
+    def __init__(self, name: str, sorcerer: str):
+        /* Lines 33-37 omitted */
+        
+    async def strike(self, session: aiohttp.ClientSession, city: str, country: str) -> List[Dict]:
+        /* Lines 39-43 omitted */
+
+class TicketmasterSerpent(PythonSerpent):
+    """🎫 Serpent trained in Ticketmaster incantations"""
+    
+    async def strike(self, session: aiohttp.ClientSession, city: str, country: str, country_code: str = 'BR') -> List[Dict]:
+class SymplaSerpent(PythonSerpent):
+    """🎭 Serpent trained in Sympla incantations"""
+    
+    async def strike(self, session: aiohttp.ClientSession, city: str, country: str, country_code: str = 'BR') -> List[Dict]:
+class FeatherDragon(PythonSerpent):
+    """🦅 The Feather-Dragon - DuckDuckGo's Swift Wings
+    
+    Soars through the web with the Duck's grace, finding events
+    that APIs cannot reach. Faster than Node.js web scraping!
+    """
+    
+    async def strike(self, session: aiohttp.ClientSession, city: str, country: str, country_code: str = 'BR') -> List[Dict]:
+    def get_events_word(self, country: str) -> str:
+        /* Lines 250-259 omitted */
+
+class SageDragon(PythonSerpent):
+    """📚 The Sage-Dragon - Wikipedia's Ancient Wisdom
+    
+    Draws upon the infinite knowledge of Wikipedia to enrich
+    events with artist/venue information. Wiser than all!
+    """
+    
+    async def strike(self, session: aiohttp.ClientSession, city: str, country: str, country_code: str = 'BR') -> List[Dict]:
+class SerpentNest:
+    """🏰 The nest where Python Serpents & Dragons gather before striking"""
+    
+    def __init__(self, city: str, country: str, country_code: str = 'BR', enable_dragons: bool = True):
+        /* Lines 319-335 omitted */
+        
+    async def release_all_serpents(self) -> Dict:
+        /* Lines 337-386 omitted */
+
+async def main():
+    """Test the Python Serpents with CLI options"""
+    import sys
+    import argparse
+    
+    # Parse CLI arguments
+    parser = argparse.ArgumentParser(description='🐍 Python Serpents - Lightning-Fast Event Fetching')
+    /* Lines 394-465 omitted */
+
+if __name__ == '__main__':
+    /* Lines 467-468 omitted */
+
+========== feather_dragon.py ==========
+#!/usr/bin/env python3
+"""
+🦅 The FEATHER-DRAGON - Omnipresent Air All-Lord
+================================================
+"With clones soaring across the digital realm, 
+The Feather-Dragon searches everywhere at once,
+Powered by parallel async magic and DeepSeek wisdom."
+
+Class: Omnipresent Search God
+Alignment: Chaotic Efficient
+Technology: Python 3.11 + asyncio + aiohttp + DeepSeek AI
+
+The Feather-Dragon spawns multiple async clones to search
+DuckDuckGo, scrape event sites, and use AI to extract
+event information from raw HTML - all in parallel.
+"""
+
+import asyncio
+import aiohttp
+import json
+import os
+import re
+from typing import Dict, List, Optional, Set
+from datetime import datetime
+from urllib.parse import quote_plus, urljoin
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    /* Lines 499-503 omitted */
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    /* Lines 507-511 omitted */
+
+# Load environment
+ENV_PATH = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(ENV_PATH)
+
+
+# Free models on OpenRouter that auto-activate as fallback.
+# Paid models (GPT-4, Claude, etc.) must be manually selected in Admin > AI Config.
+FREE_OPENROUTER_MODELS = [
+    /* Lines 520-524 omitted */
+]
+
+
+class FeatherDragon:
+Title: {search_result['title']}
+URL: {search_result['url']}
+Snippet: {search_result.get('snippet', '')}
+
+Extract:
+- Event name
+- Artist/performer
+- Date (YYYY-MM-DD format if possible)
+- Venue name
+- City
+- Ticket URL
+
+Return ONLY valid JSON:
+{{"name": "...", "artist": "...", "date": "...", "venue": "...", "city": "...", "url": "..."}}
+
+If this is NOT an event page, return: {{"is_event": false}}"""
+# CLI Interface
+if __name__ == '__main__':
+    /* Lines 969-1011 omitted */
+
+========== viagogo_api.py ==========
+#!/usr/bin/env python3
+"""
+🎫 Viagogo API Client for KEEPUP
+Fetches real events from Viagogo using their official API.
+
+Usage:
+    /* Lines 1019-1020 omitted */
+
+Examples:
+    /* Lines 1022-1024 omitted */
+    
+Environment Variables:
+    /* Lines 1026-1028 omitted */
+    PG_DB_USER, PG_DB_PASSWORD, PG_DB_NAME - Postgres credentials
+"""
+
+import os
+import sys
+import json
+import base64
+import requests
+from datetime import datetime
+from urllib.parse import urlencode
+
+# Postgres connection
+import psycopg2
+
+# City coordinates for geolocation
+CITY_COORDS = {/* Lines 1044-1054 omitted */}
+
+# API endpoints
+VIAGOGO_TOKEN_URL = 'https://account.viagogo.com/oauth2/token'
+VIAGOGO_API_BASE = 'https://api.viagogo.net'
+
+
+class ViagogoAPIClient:
+def get_postgres_connection():
+    /* Lines 1291-1310 omitted */
+
+def save_events_to_postgres(events: list) -> int:
+def main():
+    /* Lines 1374-1378 omitted */    
+    print(f"""
+╔════════════════════════════════════════════════════════════╗
+║  🎫 VIAGOGO API Client for KEEPUP                          ║
+║  City: {city:<50} ║
+╚════════════════════════════════════════════════════════════╝
+""")
+if __name__ == '__main__':
+    /* Lines 1440-1441 omitted */
+
+========== viagogo_scraper.py ==========
+#!/usr/bin/env python3
+"""
+🎫 Viagogo Event Scraper for KEEPUP
+Fetches real events from Viagogo for Brazilian cities using Selenium.
+
+Usage:
+    /* Lines 1449-1450 omitted */
+
+Examples:
+    /* Lines 1452-1453 omitted */
+    python viagogo_scraper.py "São Paulo"
+"""
+
+import re
+import sys
+import os
+import time
+from datetime import datetime
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+
+# Selenium for JavaScript-rendered pages
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import geckodriver_autoinstaller
+
+# Postgres connection (uses same env vars as Node)
+import psycopg2
+
+# City coordinates for geolocation
+CITY_COORDS = {/* Lines 1478-1488 omitted */}
+
+# City name normalization for URL (remove accents, lowercase, replace spaces)
+def normalize_city_for_url(city: str) -> str:
+    /* Lines 1492-1499 omitted */
+
+# Viagogo Brazilian search URL - this returns Brazil events!
+def get_viagogo_search_url(city: str) -> str:
+    /* Lines 1502-1505 omitted */
+
+# Viagogo URLs - DEPRECATED, use get_viagogo_search_url() instead
+VIAGOGO_URLS = {/* Lines 1508-1516 omitted */}
+
+# Alternative: Use the homepage with location
+VIAGOGO_HOMEPAGE = 'https://www.viagogo.com/br/'
+
+
+class ViagogoScraper:
+def get_postgres_connection():
+    /* Lines 1793-1814 omitted */
+
+def save_events_to_postgres(events: list) -> int:
+def main():
+╔════════════════════════════════════════════════════════════╗
+║  🎫 VIAGOGO Event Scraper for KEEPUP                       ║
+║  City: {city:<50} ║
+╚════════════════════════════════════════════════════════════╝
+""")
+if __name__ == '__main__':
+    /* Lines 1937-1938 omitted */
+
+========== duckduck_ai.py ==========
+#!/usr/bin/env python3
+"""
+🔍 The Scout (DuckDuckAI)
+=========================
+"Swift and privacy-respecting, The Scout searches the realm 
+for events without leaving traces."
+
+Class: Information Seeker
+Alignment: Chaotic Good (Privacy-First)
+Technology: Python 3.11 + DuckDuckGo API
+
+This AI helper uses DuckDuckGo's Instant Answer API to search
+for events, artists, and venues without tracking users.
+"""
+
+import json
+import os
+import re
+import time
+from typing import Dict, List, Optional
+from datetime import datetime
+
+try:
+    import requests
+except ImportError:
+    /* Lines 1965-1969 omitted */
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    /* Lines 1973-1977 omitted */
+
+# 🏪 Load from The Market (.env)
+ENV_PATH = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(ENV_PATH)
+
+
+class DuckDuckAI:
+# Main execution for testing
+if __name__ == '__main__':
+    /* Lines 2335-2370 omitted */
+
+========== wikipedia_ai.py ==========
+#!/usr/bin/env python3
+"""
+📚 The Scholar (WikipediaAI)
+============================
+"From the great library of Wikipedia, The Scholar extracts wisdom 
+about music, cinema, cuisine, and culture."
+
+Class: Knowledge Keeper
+Alignment: Wise Neutral
+Technology: Python 3.11 + Wikipedia API
+
+This AI helper fetches information from Wikipedia to build a knowledge
+base that matches the interest categories in Profile/EditProfile pages.
+"""
+
+import json
+import os
+import re
+import time
+import hashlib
+from typing import Dict, List, Optional, Set
+from datetime import datetime
+
+try:
+    import requests
+except ImportError:
+    /* Lines 2398-2402 omitted */
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    /* Lines 2406-2410 omitted */
+
+# 🏪 Load from The Market (.env)
+ENV_PATH = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(ENV_PATH)
+
+
+class WikipediaAI:
+# Main execution for testing
+if __name__ == '__main__':
+========== auto_city_populator.py ==========
+#!/usr/bin/env python3
+"""
+🌆 AUTO CITY POPULATOR — On-demand parallel AI event + venue discovery
+======================================================================
+When a user lands in a city with no events, this script fires ALL
+available AI providers in PARALLEL to populate the city FAST.
+
+Unlike the fallback chain (try A → if fail try B), this runs
+every provider simultaneously — each AI sees the same city but
+returns different results, maximizing event coverage.
+
+Providers (ALL run in parallel):
+  /* Lines 2887-2895 omitted */
+
+Usage:
+  python3 auto_city_populator.py "Porto Alegre" "Brazil" --lat -30.0346 --lng -51.2177
+"""
+
+import asyncio
+import aiohttp
+import json
+import os
+import re
+import sys
+import time
+import unicodedata
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from urllib.parse import quote_plus
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    /* Lines 2915-2918 omitted */
+
+# Load environment
+ENV_PATH = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(ENV_PATH)
+
+# ── AI Configuration ──────────────────────────────────────────
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', '')
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+# Free OpenRouter models — run ALL in parallel (zero cost)
+FREE_MODELS = [
+    /* Lines 2932-2936 omitted */
+]
+
+# Ticketmaster key (non-AI source)
+TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY', '')
+
+# ── Postgres Configuration ──────────────────────────────────
+PG_CONFIG = {/* Lines 2943-2948 omitted */}
+
+
+def build_event_prompt(city: str, country: str, category: str = "") -> str:
+    /* Lines 2952-2955 omitted */
+
+Search your knowledge for actual events, concerts, festivals, shows,
+sports, theater, community gatherings happening in or near {city}.
+
+For each event provide:
+- name: Event or show name
+- artist: Performer/artist/team name (if applicable)
+- date: Date in YYYY-MM-DD format (or "TBA" if unknown)
+- venue: Venue or location name
+- city: "{city}"
+- country: "{country}"
+- category: one of Music, Sports, Theater, Festival, Comedy, Community, Other
+- description: Brief description (1-2 sentences)
+
+Return ONLY a valid JSON array of event objects. No markdown, no explanation.
+If you know of no events, return an empty array: []
+"""
+
+
+def build_venue_prompt(city: str, country: str, lat: float = None, lng: float = None) -> str:
+    /* Lines 2975-2978 omitted */
+
+Include all types of locations where events happen:
+- Concert halls, theaters, auditoriums
+- Sports stadiums and arenas
+- Bars, clubs, and nightlife venues with live music
+- Convention centers and exhibition halls
+- Cultural centers, museums with event spaces
+- Parks and outdoor amphitheaters
+- Community centers, churches with events
+
+For each venue provide:
+- name: Official venue name
+- address: Street address (if known)
+- city: "{city}"
+- country: "{country}"
+- latitude: Approximate latitude (decimal, e.g. -30.0346)
+- longitude: Approximate longitude (decimal, e.g. -51.2177)
+- category: one of Venue, Stadium, Theater, Bar, Club, Cultural, Park, Arena, Other
+- capacity: Estimated capacity (number or "Unknown")
+- description: Brief description (1-2 sentences about the venue)
+
+Return ONLY a valid JSON array. No markdown, no explanation.
+If you know of no venues, return an empty array: []
+"""
+
+
+async def call_ai(session: aiohttp.ClientSession,
+async def fetch_ticketmaster(session: aiohttp.ClientSession,
+# ── Viagogo helpers ──────────────────────────────────────────
+def _normalize_city_for_url(city: str) -> str:
+    /* Lines 3103-3108 omitted */
+
+def _parse_viagogo_date(text: str) -> Optional[str]:
+    /* Lines 3110-3146 omitted */
+
+async def fetch_viagogo(session: aiohttp.ClientSession,
+# ── Sympla (Brazilian event platform) ───────────────────────
+async def fetch_sympla(session: aiohttp.ClientSession,
+# ── Eventbrite (global event platform) ───────────────────────
+async def fetch_eventbrite(session: aiohttp.ClientSession,
+# ── Bandsintown (artist tour dates, free REST API) ───────────
+# Default popular artists that tour Brazil/South America
+BANDSINTOWN_ARTISTS = [
+    /* Lines 3456-3463 omitted */
+]
+
+async def fetch_bandsintown(session: aiohttp.ClientSession,
+                            /* Lines 3466-3535 omitted */
+
+async def call_ai_venues(session: aiohttp.ClientSession,
+def deduplicate_events(events: List[Dict]) -> List[Dict]:
+    /* Lines 3607-3617 omitted */
+
+async def save_to_postgres(events: List[Dict], lat: float = None, lng: float = None):
+    /* Lines 3619-3713 omitted */
+
+async def auto_populate(city: str, country: str = 'Brazil',
+                        /* Lines 3715-3872 omitted */
+
+# ── CLI entry point ────────────────────────────────────────────
+if __name__ == '__main__':
+    /* Lines 3875-3900 omitted */
+
+========== keeper_runner.py ==========
+#!/usr/bin/env python3
+"""
+🗝️ Keeper Runner - AI Orchestrator
+====================================
+Commands The Scholar and The Scout to perform AI tasks for KEEP-Up.
+
+Usage:
+    /* Lines 3909-3913 omitted */
+
+Options:
+    /* Lines 3915-3916 omitted */
+    --category "music"    # Specify category filter
+"""
+
+import argparse
+import json
+import os
+import sys
+from datetime import datetime
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 🏪 Load from The Market (.env)
+try:
+    /* Lines 3930-3933 omitted */
+    print(f"🏪 Loaded config from The Market (.env)")
+except ImportError:
+    /* Lines 3935-3936 omitted */
+
+from python.wikipedia_ai import WikipediaAI
+from python.duckduck_ai import DuckDuckAI
+
+
+def banner():
+    /* Lines 3942-3943 omitted */
+    print("""
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║   🗝️  KEEPER RUNNER - AI Orchestrator                           ║
+║                                                                  ║
+║   Commanding the AI Helpers:                                     ║
+║   📚 The Scholar (WikipediaAI)                                   ║
+║   🔍 The Scout (DuckDuckAI)                                      ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+    /* Lines 3953-3955 omitted */
+
+def run_wikipedia(args):
+    /* Lines 3957-3979 omitted */
+
+def run_duckduck(args):
+    /* Lines 3981-4007 omitted */
+
+def run_populate(args):
+    /* Lines 4009-4029 omitted */
+
+def run_all(args):
+    /* Lines 4031-4052 omitted */
+
+def main():
+    /* Lines 4054-4114 omitted */
+
+if __name__ == '__main__':
+    /* Lines 4116-4117 omitted */
+
+========== __init__.py ==========
+"""
+KEEP-Up AI Helpers Module
+=========================
+📚 The Scholar (WikipediaAI) - Knowledge extraction from Wikipedia
+🔍 The Scout (DuckDuckAI) - Event discovery via DuckDuckGo
+
+Usage:
+    /* Lines 4126-4127 omitted */
+    from python.duckduck_ai import DuckDuckAI
+"""
+
+from .wikipedia_ai import WikipediaAI
+from .duckduck_ai import DuckDuckAI
+
+__all__ = ['WikipediaAI', 'DuckDuckAI']
+__version__ = '1.0.0'
