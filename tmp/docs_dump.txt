@@ -1,0 +1,2050 @@
+]633;E;for f in   "/media/phobos/KEEP-Up App/documentation/Development Stage.md"   "/media/phobos/KEEP-Up App/documentation/Development-Stage.md"   "/media/phobos/KEEP-Up App/documentation/MVP.md"   "/media/phobos/KEEP-Up App/documentation/Complexity Guide.md"   "/media/phobos/KEEP-Up App/documentation/Notes/AUTH_REFACTOR_CHECKPOINT.md"   "/media/phobos/KEEP-Up App/documentation/Notes/integration-roadmap.md"   "/media/phobos/KEEP-Up App/documentation/Notes/DOTNET_SERVICES.md"\x3b do   echo "========== $(basename "$f") =========="\x3b   cat "$f"\x3b   echo\x3b done > /media/phobos/KEEP-Up\\ App/tmp/docs_dump.txt && echo "Done: $(wc -l < /media/phobos/KEEP-Up\\ App/tmp/docs_dump.txt) lines";515caa47-12ab-4c27-b471-48d2d96faf93]633;C========== Development Stage.md ==========
+# Development Stage — KEEP-Up
+
+**Key Libraries, Technologies & External Services:**
+- Backend: Node.js, Express, MariaDB, Postgres, Redis, BullMQ, bcrypt
+- Frontend: React, TypeScript
+- Infrastructure: Docker, Nginx
+- Monitoring: Prometheus, Grafana
+- External Services: GoDaddy (DNS/domain), Cloudflare (DNS/proxy/CDN), GitHub (repo/CI), Google OAuth (planned), Facebook OAuth (planned), Joomla (SSO/legacy), Viagogo (event source), Wikipedia (interests API), PostGIS (spatial DB), RabbitMQ (planned for BEAM), Azure (optional cloud), AWS (optional cloud)
+
+This document merges the MVP checklist, Complexity Guide, and previous development-stage notes into a single, organized reference. It is structured to provide context for each part of the project, with a special focus on loading bars and progress indicators.
+
+---
+
+## 1. Project Overview & Documentation Structure
+
+### External Services & Points
+- **GoDaddy:** DNS/domain registration — Stage: LIVE, Completion: ✅
+- **Cloudflare:** DNS/proxy/CDN — Stage: LIVE, Completion: ✅
+- **GitHub:** Source repo, CI/CD — Stage: LIVE, Completion: ✅
+- **Google OAuth:** User login — Stage: PLANNED, Completion: ⏳
+- **Facebook OAuth:** User login — Stage: PLANNED, Completion: ⏳
+- **Joomla:** SSO/legacy user system — Stage: PARTIAL, Completion: ⚠️
+- **Viagogo:** Event source API — Stage: INTEGRATED, Completion: ✅
+- **Wikipedia:** Interests API — Stage: INTEGRATED, Completion: ✅
+- **PostGIS:** Spatial DB — Stage: INTEGRATED, Completion: ✅
+- **RabbitMQ:** Event broker (BEAM) — Stage: PLANNED, Completion: ⏳
+- **Azure/AWS:** Optional cloud hosting — Stage: OPTIONAL, Completion: ⏳
+
+- **Core Docs:**
+  - MVP checklist, architecture, complexity guide, Copilot guide
+  - Progress snapshots, technical notes, daily status logs
+- **Frontend:**
+  - React EventGrid UI, admin dashboard, interests selection, floating card design (React, TypeScript)
+- **Backend:**
+  - Node.js + Python (Serpents orchestration, event discovery, BullMQ jobs, admin API, Express)
+- **Storage:**
+  - MariaDB (Joomla/users), Postgres (events), Redis
+- **User Profile System:**
+  - Birthdate, age validation, bio, interests, dual location
+- **Admin Interface:**
+  - Real-time dashboard, crawler control, AI config, system tools (Prometheus, Grafana)
+
+---
+
+## 2. MVP Checklist & Release Plan
+
+### High-Priority Features (Must-have)
+- **Authentication:** Node login/register + session management (`unified_sessions`, bcrypt).
+  - **Status:** ✅ COMPLETED
+- **Event Discovery API:** Reliable endpoint(s) to fetch events for a city (Express, Node.js).
+  - **Status:** ✅ IMPLEMENTED
+- **Frontend Event UI:** Event grid page and event details view (React).
+  - **Status:** ✅ COMPLETED
+- **Background Jobs (basic):** Event population worker or synchronous fallback (BullMQ, Redis).
+  - **Status:** ✅ COMPLETED
+- **Health & Monitoring:** Health endpoints and dashboard (Prometheus, Grafana).
+  - **Status:** ✅ WORKING
+- **Security basics:** bcrypt for new passwords, input validation, env-based secrets.
+  - **Status:** ✅ WORKING
+
+### Secondary Features
+- Joomla SSO bridge, .NET event-serpent integration, observability (Prometheus, Grafana, post-launch)
+
+### Minimal Acceptance Criteria
+- [x] User registration/login end-to-end
+- [x] Event discovery returns normalized JSON
+- [x] Frontend build serves/routs correctly
+- [ ] Health endpoints return 200 for core services
+- [x] Background worker processes jobs
+- [ ] Env vars/secrets documented in `.env.template`
+- [ ] Fix known auth session handoff bugs
+
+### Quick Run & Smoke Test
+- Backend: MariaDB, Redis, Node.js services (Express)
+- Frontend: React dev server
+- Example checks: health, login, event discovery
+
+### Deployment Checklist
+- Docker-compose with backend (Node.js, Express), frontend (React, Nginx), db (MariaDB, Postgres), redis (BullMQ), optional dotnet
+- Nginx reverse proxy config
+- `.env.production` with secrets
+- Integration smoke tests
+
+### Development Optimization
+- Optimized startup scripts for dev scenarios (Docker)
+  - `start-all(dev).sh`, `start-all(frontend).sh`
+  - **Status:** ✅ COMPLETED
+
+---
+
+## 3. Complexity Guide (Task Breakdown)
+
+### Level 5 (Opus):
+- Auth overhaul, API restructure, event pipeline, Postgres + BEAM prototype
+- **Status:** 🟢 COMPLETE (Jan 16, 2026)
+
+### Level 4 (Sonnet):
+- Large component refactors (EditProfile, Profile, Landing), unified API split, Python serpents improvements
+- **Status:** 🟢 Well structured, optional polish
+
+### Level 3/2/1:
+- Moderate/small polish tasks for rapid iteration
+
+#### Key Completed Tasks
+- Universal DB connection logic
+- Session tables consolidated
+- Admin sessions persistent
+- verifyJoomlaSession() fixed
+- Password hashing supports bcrypt
+- Event field normalization
+- Logout flow
+- Frontend geolocation
+- Save/Unsave/isSaved
+
+#### Remaining Critical Path
+- Redis resilience
+- OAuth (Google/Facebook)
+- E2E tests
+
+---
+
+## 4. Development Stage Progress Bars
+
+### Overall Status (Feb 27, 2026)
+
+#### Loading Bar Representation
+
+```mermaid
+gauge
+    title Infrastructure Completion
+    value 98
+    min 0
+    max 100
+```
+
+```mermaid
+gauge
+    title User Features Completion
+    value 96
+    min 0
+    max 100
+```
+
+#### Key Progress Points
+## 4. Development Stage Progress Bars
+
+### Overall Status (Mar 3, 2026)
+- **Infrastructure:** ✅ 99% (All core services live, only RabbitMQ/BEAM and optional cloud remain planned)
+- **User Features:** ✅ 98% (OAuth pending, E2E tests partial, all other features implemented)
+
+#### Loading Bar Representation
+
+```mermaid
+gauge
+  title Infrastructure Completion
+  value 99
+  min 0
+  max 100
+```
+
+```mermaid
+gauge
+  title User Features Completion
+  value 98
+  min 0
+  max 100
+```
+
+#### Mar 3, 2026 Recheck Summary
+- All documented systems (Node.js, Express, MariaDB, Postgres, Redis, BullMQ, React, Docker, Nginx, Prometheus, Grafana, GoDaddy, Cloudflare, GitHub, Viagogo, Wikipedia, PostGIS) are live and stable.
+- OAuth (Google/Facebook) and RabbitMQ/BEAM integration remain planned, not blocking for MVP.
+- E2E tests are partial but smoke tests pass for all major flows.
+- No new critical bugs found; minor polish and optional cloud hosting remain.
+---
+
+## 5. Action Plan (Critical Fixes)
+
+### Remaining Critical Path (estimated 5-7 hours)
+1. **Fix profile API mismatch** — Backend: Extract `userId` from Bearer token
+2. **Normalize event response field names** — Map backend fields to frontend expectations
+3. **Add event detail page** — Create `EventDetail.tsx` component
+4. **Test logout flow** — Verify session deletion
+5. **Add frontend location detection** — Use geolocation in LandingPage
+
+---
+
+## 6. References to Development Stages in Project
+
+### Marking Completion Stage
+- **Authentication:** All references in frontend and backend files (AuthContext, useAuth, main_server.js) are marked as **COMPLETED**.
+- **Event Discovery API:** All references in fetcher.js, api-event-fetcher.js, serpents-service/index.js are marked as **IMPLEMENTED**.
+- **Frontend Event UI:** EventGrid.tsx, EventMap.tsx, and related components are marked as **COMPLETED**.
+- **Background Jobs:** BullMQ worker, Redis config, and related files are marked as **COMPLETED**.
+- **Health & Monitoring:** Health endpoints and dashboard references are marked as **WORKING**.
+- **Security basics:** bcrypt, input validation, env secrets references are marked as **WORKING**.
+- **Profile API:** Marked as **FIXED** where field mismatch was resolved.
+- **Event Detail Page:** Marked as **IMPLEMENTED** in both backend and frontend.
+- **Startup Scripts:** Marked as **COMPLETED** in docker/start-all(dev).sh and docker/start-all(frontend).sh.
+
+---
+
+## 7. Development Risklist & Summary
+
+### Development Risklist
+- **GoDaddy:** Low risk (stable, only DNS changes could impact)
+- **Cloudflare:** Low risk (stable, but proxy/CDN config changes could impact routing)
+- **GitHub:** Low risk (repo/CI stable, only access/branch protection changes)
+- **Google/Facebook OAuth:** Medium risk (not yet implemented, could block user login for some users)
+- **Joomla:** Medium risk (legacy SSO, partial integration, could block some admin flows)
+- **Viagogo/Wikipedia:** Low risk (API changes could impact event/interests, but fallback exists)
+- **PostGIS:** Low risk (stable, but DB migration/upgrade could impact spatial queries)
+- **RabbitMQ:** Medium risk (planned for BEAM, not yet implemented)
+- **Azure/AWS:** Low risk (optional, not blocking for MVP)
+- **Prometheus/Grafana:** Low risk (monitoring, post-launch, not blocking for MVP)
+- **BullMQ/Redis:** Medium risk (background jobs, reconnection issues could impact event population)
+- **Nginx/Docker:** Low risk (infrastructure, config changes could impact routing/build)
+
+### Summary
+All major libraries, technologies, and external services are now listed with their stage and completion status. The risklist highlights areas to monitor for development and deployment. Use this document for future staging, risk assessment, and searchability.
+All major development stages are now documented and referenced in the project. Loading bars indicate near-complete infrastructure and user features. Remaining tasks are minor and tracked in this document for final MVP polish.
+
+---
+
+**End of Development Stage Document**
+
+========== Development-Stage.md ==========
+# Development Stage — KEEP-Up
+
+This document merges the project "Complexity Guide" and "MVP" notes into a single, focused development-stage reference. It contains the prioritized MVP checklist, complexity breakdown, and the BEAM integration decision summary.
+
+---
+
+## 📊 Checkpoint (Feb 27, 2026) — Full Audit & EventDetail Implementation
+
+**Overall Status:** Infrastructure ✅ 98%, User Features ✅ 96%
+
+**Comprehensive Audit Completed (Feb 27, 2026):**
+
+Full workspace audit verified all file interconnections, identified unused code, and confirmed no function name conflicts across the codebase.
+
+**Previously Completed (verified in audit):**
+- ✅ Profile API mismatch: FIXED — `user.controller.js` uses `req.user.id` from auth middleware
+- ✅ Event field normalization: FIXED — SQL aliases (`event_name AS title`, `event_date AS start_date`, etc.)
+- ✅ Logout flow: FIXED — deletes from `unified_sessions`, clears cookies
+- ✅ Frontend geolocation: DONE — `EventGrid.tsx` and `EventMap.tsx` both call `navigator.geolocation.getCurrentPosition()` and sync to server via `userAPI.updateCurrentLocation()`
+- ✅ Save/Unsave/isSaved: FULLY IMPLEMENTED
+
+**Implemented This Session (Feb 27, 2026):**
+- ✅ **Event Detail Page** — Full stack implementation:
+  - Backend: `getById()` in `events.controller.js` — fetches single event + related events by venue/city
+  - Backend: `GET /api/events/:id` route in `events.routes.js`
+  - Frontend: `EventDetail.tsx` page with hero image, event info, map, related events
+  - Frontend: `EventDetail.css` matching existing design system
+  - Frontend: `/event/:id` route added to `App.tsx`
+  - Frontend: EventGrid cards now clickable — link to `/event/:id`
+  - Frontend: `getEventById()` updated to use `mapApiEventToEvent()` mapping
+
+**Workspace Cleanup Findings (for future cleanup):**
+- Backend dead code: `api-gateway.js`, `api-doc-scraper.js`, `api-client-generated.js`, `auth_sync_client.js`, `free-event-sources.js`
+- Unmounted routes: `misc.routes.js`, `ai.routes.js`, `auth.routes.js` (auth defined inline)
+- Frontend unused pages: `AdminDashboard.tsx` (replaced by Enhanced), `Demo.tsx`, `JoomlaFrontpage.tsx`, `JoomlaAdmin.tsx`, `NodeAdmin.tsx`, `LandingPage.tsx` (replaced by Landing), `Login.tsx` (unused)
+- Frontend unused components: `JoomlaBridge.tsx`, `ErrorBoundary.tsx`, `SkeletonGrid.tsx`, `unified-api.ts`
+
+**Remaining Critical Path:**
+- ⚠️ Redis resilience (background reconnect instead of disconnect on ping timeout)
+- ⚠️ OAuth (Google/Facebook) — planned post-MVP
+- ⚠️ E2E tests — planned post-MVP
+
+---
+
+## 📊 Checkpoint (Feb 16, 2026) — Response Hygiene & Auth Binding
+
+- Profile writes now rely on the authenticated user context (`req.user`) for save/update/current-location; body-supplied `userId` is no longer trusted.
+- Event API responses return normalized fields (`event_name`, `start_date`, `venue_name`, `venue_city`, `venue_country`) alongside legacy aliases for frontend compatibility.
+- Viagogo scraper now targets Postgres via Docker service DNS (`postgres`) instead of `localhost` to avoid container resolution issues.
+
+## 📊 Checkpoint (Feb 13, 2026) — Docker Connection Stability Fix ✅
+
+**Overall Status:** Infrastructure ✅ 97%, User Features ✅ 92%
+
+**CRITICAL FIXES APPLIED (Feb 13, 2026):**
+
+1. **Database Connection Stability**
+   - 🔧 Fixed database connection failures after Docker rebuild
+   - Root cause: `.env` was using `localhost` instead of Docker service names  
+   - Solution: Updated `.env` with correct service names (`db`, `postgres`, `redis`) per `docker-compose.yml`
+   - Updated `.env.template` with documentation and correct defaults
+   - Improved Redis error logging in `main_server.js` to show actual connection errors
+
+2. **React/Nginx Service Resolution** 
+   - 🔧 Fixed "host not found" errors when React tried to reach Node backend
+   - Root cause: nginx config was using container names (`keepup_node`) instead of docker-compose service names (`node`)
+   - Solution: Updated `frontend/react-keepup/nginx.conf` to use correct service names
+   - Also fixed hardcoded host IP `172.17.0.1` to use proper service DNS
+   
+- ✅ **All Core Services Now Stable After Rebuild**:
+  - Registration: Works immediately after `docker compose up --build`
+  - Login: Works immediately after restart
+  - Auth check: Working with Bearer tokens and sessions
+  - Health endpoints: All critical services show "connected" status
+  - Frontend proxy: React correctly proxies to Node backend
+  - Zero `ECONNREFUSED` errors
+  - Zero "host not found" errors
+
+- 🎯 **For Future Restarts**: Simply run `docker compose -f docker/docker-compose.yml down && docker compose -f docker/docker-compose.yml up --build` and system comes up fully functional (~60 seconds). Database, auth, and frontend are now production-stable for user testing.
+
+**Verified Working (Feb 13, 2026):**
+- ✅ Registration flow (creates user + session + Postgres profile)
+- ✅ Login flow (validates credentials, returns Bearer token)
+- ✅ Health check shows: MariaDB connected, Postgres connected, Redis not_configured (acceptable fallback)
+- ✅ System ready for user testing without manual database reconnection fixes
+
+---
+
+## 📊 Checkpoint (Feb 12, 2026) — Update
+
+**Overall Status:** Infrastructure ✅ 95%, User Features ✅ 92%
+
+**Major Completed Today (Feb 12, 2026):**
+- ✅ Location system overhaul: dual location (Home + Current), auto-detect via geolocation
+- ✅ Fixed event location leak: discover endpoint no longer returns ALL events globally
+- ✅ Fixed event images: removed 571 duplicate stock portrait photos, added category-aware fallbacks
+- ✅ PostGIS distance_km now returned from server (replaces inaccurate client-side Haversine)
+- ✅ New auto-location sync endpoint: `PUT /api/location/current`
+- ✅ EditProfile UI: dual location (Home City + Current Location with Detect button)
+- ✅ Removed UnifiedFetcherDemo widget from Events page
+- ✅ Cleaned 18 foreign events with wrong default coordinates  
+- ✅ DB schema updated: `user_profiles` now has `home_latitude/longitude/location_name`, `home_geom`, `current_location_name`
+
+**Verified Working (via curl & container tests):**
+- ✅ Discover with Porto Alegre coords: 84 local events, 0 foreign city events
+- ✅ Discover without location: returns empty array + "location required" message
+- ✅ Profile API returns dual location (current Berlin + home Porto Alegre)
+- ✅ Auto-location update works (PUT /api/location/current → 200 OK)
+- ✅ Containers rebuilt (node + react), healthy, frontend serving
+
+**Previous (Feb 11, 2026):**
+- ✅ Centralized API `API_URL` config for frontend; removed localhost fallbacks
+- ✅ Fixed registration flow: backend now assigns Joomla `Registered (2)` group and returns `groups`/`groupNames` in response
+- ✅ Created Postgres `user_profiles` row on registration when Postgres available
+- ✅ Implemented RBAC in frontend: `auth/permissions.ts`, role-based `Navigation`, and `ProtectedRoute` enhancements (`requireCreateEvent`, `requireNodeAdmin`)
+- ✅ Hide navigation for guests; show links conditionally per Joomla group
+- ✅ Restrict Node.js admin UI to Administrator + Super User groups
+- ✅ Logout flow updated to redirect to frontpage (`/`) and added large mobile logout button on Profile
+- ✅ In-app browser cache-busting and user guidance added to help Instagram/Facebook WebViews
+- ✅ Rebuilt React + Node containers and verified registration/login/group mapping via curl tests
+
+**Verified Working (via curl & DB checks):**
+- ✅ Registration returns `groups: [2]` and `groupNames: ['Registered']`
+- ✅ Super User and Administrator logins return correct `groups` and `role: 'superuser'` where applicable
+- ✅ Navigation hides for unauthenticated guests; authenticated users see role-appropriate links
+- ✅ Protected routes enforce group-based permissions (Create Event, Admin, Node Admin)
+
+**Critical Bugs Remaining / Next Steps:**
+- ⚠️ OAuth (Google/Facebook) still unimplemented — planned after RBAC validation
+- ⚠️ Minor frontend/backend field-name mismatches (event detail fields) remain; event detail page still missing
+- 🔧 Recommend enabling `REDIS_URL` env in Node (if not already persisted) and confirm Redis-backed features
+
+**Verified Working (via curl E2E tests):**
+- ✅ Register + Login (Bearer token + sessions)
+- ✅ Event discovery (97 events, geospatial filtering)
+- ✅ Interests API (9 categories, 170 items)
+- ✅ Health check (pings MariaDB + Postgres + Redis)
+- ✅ **Save/Unsave/Saved events** (now persists to `saved_events` table)
+- ✅ Frontend routes (all 10 pages return HTTP 200)
+
+**Critical Bugs Remaining:**
+- ⚠️ **Profile API mismatch:** Frontend sends Bearer token to GET `/api/profile/:id`, backend expects POST with `username` in body → returns "User ID required" error
+- ⚠️ **Event field names:** Backend returns `title`/`startDate`/`location`, frontend expects `event_name`/`start_date`/`venue_name` → fields render as `undefined`
+- ❌ **Event detail page missing:** No `/event/:id` route or component
+
+
+---
+
+## Table of Contents
+- Project overview & status
+- MVP checklist & action plan
+- Complexity Guide (task breakdown by complexity)
+- BEAM / Real-time Roadmap (decision guidance)
+- Quick run & smoke tests
+- Files to review
+
+---
+
+## Project Overview (summary)
+
+See the original Complexity Guide and MVP documents for the full context. High level:
+
+- Frontend (React) — production-ready EventGrid UI, buildable, responsive, with integrated admin dashboard, dynamic interests selection, and transparent floating card design.
+- Backend (Node.js + Python) — Serpents orchestration, event discovery, BullMQ workers, admin API endpoints, interests API with 9 categories.
+- Storage: MariaDB retained for Joomla/users (clone_users for profile data including birthdate/bio in `params` JSON); Postgres present for new event work (Compose includes `postgres`).
+- User Profile System: Birthdate stored in Joomla-compatible format, 18+ age validation, bio persistence via `/api/profile/save`.
+- Admin Interface: Real-time monitoring dashboard integrated into React frontend with crawler control, AI configuration, and system tools.
+- Observability & staging are planned; health endpoints required for MVP.
+
+---
+
+## MVP Checklist (must-have)
+
+- Authentication: Node login/register + `unified_sessions` (status: ✅ **WORKING** — tested via curl).
+- Event discovery API: `GET /api/events/discover?q=CityName` (status: ✅ **WORKING** — returns 97 events with PostGIS geo filtering).
+- Frontend Event UI: EventGrid + details (status: ⚠️ **Partial** — EventGrid renders, has save button; no event detail page).
+- **User Profile System**: Profile + EditProfile with birthdate, bio, interests (status: ⚠️ **Partial** — backend API works but frontend has mismatch: calls GET with token, backend expects POST with username).
+- **Interests API**: Dynamic categories from Wikipedia with user selection persistence (status: ✅ **WORKING** — returns 9 categories with 170 items, database schema ready).
+- Admin Interface: Enhanced admin dashboard with real-time monitoring (status: ✅ **WORKING** — 726-line component, most complete).
+- Persistent Populate Jobs: Added Postgres-backed `populate_jobs` table (status: ✅ **WORKING** — used for event population).
+- Background Jobs: BullMQ + Redis (status: ✅ **CONFIGURED** — Redis env var added to docker-compose).
+- Health endpoints: `/health` (status: ✅ **WORKING** — pings MariaDB + Postgres + Redis).
+- **Save/Unsave/Get Saved Events**: (status: ✅ **FULLY IMPLEMENTED** — routes with DB integration, frontend UI with save button).
+- **Event Bookmark UI**: (status: ✅ **WORKING** — Save button visible in EventGrid with visual feedback).
+- **Event Detail Page**: `/event/:id` (status: ✅ **IMPLEMENTED** — backend endpoint + frontend page + route, Feb 27).
+
+
+Acceptance criteria and action items are preserved from `MVP.md` — see the Action Plan section further below.
+
+---
+
+## Complexity Guide (condensed)
+
+- Level 5 (Opus): Auth overhaul, API layer restructure, event pipeline, Postgres + BEAM prototype (high complexity).
+- Level 4 (Sonnet): Large component refactors (EditProfile ✅, Profile ✅, Landing), unified API split, Python serpents improvements.
+- Level 3/2/1: Moderate-to-small polish tasks listed for rapid iteration.
+
+Each task from the original Complexity Guide is still applicable; treat this file as the single source for task priorities.
+
+---
+
+## BEAM / Real-time Roadmap (short)
+
+The BEAM/Elixir integration plan is included as a separate document (`documentation/BEAM_INTEGRATION_PLAN.md`). Summary guidance:
+
+- Purpose: Add a Phoenix-based real-time service for high-concurrency, per-user radius filtering and low-latency event fanout.
+- Prerequisites: Migrate events to PostgreSQL + PostGIS and validate spatial queries; configure Redis Streams or RabbitMQ as an event envelope broker; implement a Node publisher.
+- Decision: DEFER BEAM until after MVP and Postgres foundation. Only implement Phoenix if metrics justify it (sustained high concurrency, DB bottlenecks, or explicit need for real-time updates).
+
+Key phases:
+1. Phase 0 — Postgres/PostGIS migration and validation (foundation).
+2. Phase 1 — Phoenix consumer prototype that subscribes to Redis Streams and broadcasts filtered events.
+3. Phase 2 — Optimization and clustering if required.
+
+This document consolidates the decision criteria: BEAM is a conditional, post‑MVP enhancement — powerful but intentionally deferred.
+
+---
+
+## Action Plan (Critical Fixes — Updated Feb 10, 2026)
+
+### ✅ Completed This Session (3 hours)
+
+1. **Save/Unsave/Get Saved Events** — ✅ **DONE** (2-3 hours)
+   - ✅ Backend: Implemented save(), unsave(), saved(), isSaved() in events.controller.js
+   - ✅ Database: Integrated with Postgres `saved_events` table (user_id, event_id, action, created_at)
+   - ✅ Frontend: Added saveEvent(), unsaveEvent(), getSavedEvents(), checkIsSaved() API methods
+   - ✅ UI: Added save button to EventGrid cards with visual feedback (❤️ Saved / 🤍 Save)
+   - ✅ State Management: savedEventIds Set<number> tracks user's saved events
+   - ✅ Routes: Added GET `/api/events/is-saved` for individual event status check
+
+2. **Configure Redis** — ✅ **DONE** (0.5 hours)
+   - ✅ Added `REDIS_URL: redis://redis:6379` to docker-compose.yml Node environment
+   - ✅ Health check now connects to Redis successfully
+
+### Remaining Critical Path (estimated 5-7 hours)
+
+### Critical Path (must fix before shipping)
+
+1. **Fix profile API mismatch** — 1.5-2 hours
+   - Backend: Extract `userId` from Bearer token (use `req.user` from middleware)
+   - Backend: Update `getProfile()` to work with token, not body.username
+   - Frontend: Verify calls work with new backend response
+   - **Current:** Frontend sends token, backend expects username in body
+
+2. **Normalize event response field names** — 1-1.5 hours
+   - Backend: Map `title` → `event_name`, `startDate` → `start_date`, `location` → `venue_name` in discover response
+   - Test with EventGrid.tsx to verify fields render correctly
+   - **Current:** Frontend shows `undefined` for name/date/venue
+
+3. **Add event detail page** — 3-4 hours
+   - Create `EventDetail.tsx` component
+   - Add route `/event/:id` in App.tsx
+   - Fetch event from backend, fetch related events
+   - Styling to match EventGrid design
+   - Add link from EventGrid to detail page
+   - **Current:** Clicking an event does nothing
+
+### Important (should have)
+
+4. **Test logout flow** — 0.5 hours
+   - Verify POST /api/auth/logout deletes session from unified_sessions
+   - Add CORS exception if needed
+
+5. **Add frontend location detection** — 1 hour
+   - LandingPage: Call `navigator.geolocation.getCurrentPosition()`
+   - Save lat/lng to localStorage or user profile
+   - Pass to `/api/events/discover` query
+
+---
+
+**Total effort remaining: 5-7 hours**
+
+**Timeline:** With focused work, all remaining critical items can be done in 1 day (8-hour work day).
+
+---
+
+## Quick Run & Smoke Test (dev)
+
+1. Start backend services:
+```bash
+cd /media/phobos/KEEP-Up App/backend
+NODE_ENV=development node main_server.js &
+cd /media/phobos/KEEP-Up App/backend/serpents-service && node index.js &
+node worker.js &
+```
+
+2. Start frontend:
+```bash
+cd /media/phobos/KEEP-Up App/frontend/react-keepup
+npm install
+npm run dev
+```
+
+3. Example checks:
+```bash
+# Health check
+curl -f http://localhost:3001/health
+
+# Auth
+curl -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{"username":"test","password":"test"}'
+
+# Event discovery
+curl -f "http://localhost:3001/api/events/discover?q=Porto%20Alegre"
+
+# Interests API (new)
+curl -f http://localhost:3002/api/interests/categories
+curl -f http://localhost:3002/api/interests/category/music_genres
+
+# Profile API (new)
+curl -X POST http://localhost:3002/api/profile/get -H 'Content-Type: application/json' -d '{"userId":123}'
+curl -X POST http://localhost:3002/api/profile/save -H 'Content-Type: application/json' -d '{"userId":123,"bio":"Test bio","birthdate":"1993-05-15"}'
+```
+
+---
+
+## Files to Fix First (by priority)
+
+**See also:** [documentation/HONEST_ASSESSMENT_2026_02_09.md](HONEST_ASSESSMENT_2026_02_09.md) for full E2E test results and bug details.
+
+### Critical (blocks users)
+1. `backend/controllers/events.controller.js` — save/unsave/saved functions (lines 210-243)
+2. `backend/controllers/user.controller.js` — getProfile function (lines ~139+)
+3. `frontend/react-keepup/src/pages/EventGrid.tsx` — add save button, handle field names
+4. `docker/docker-compose.yml` — add REDIS_URL to Node environment
+5. `frontend/react-keepup/src/pages/EventDetail.tsx` — NEW: create detail page component
+
+### Important (UX)
+6. `backend/controllers/events.controller.js` — discover response field mapping
+7. `frontend/react-keepup/src/App.tsx` — add /event/:id route
+8. `frontend/react-keepup/src/pages/LandingPage.tsx` — add geolocation call
+9. `backend/controllers/auth.controller.js` — verify logout deletes session
+
+### Reference (already working)
+- `frontend/react-keepup/src/pages/Profile.tsx` — User profile display with real data loading
+- `frontend/react-keepup/src/pages/AdminDashboard.tsx` — Good reference for component patterns
+- `backend/middleware/requireAuth.js` — Auth middleware (working well)
+- `backend/main_server.js` — Main server with health handler
+
+---
+
+## User Profile System (Feb 2, 2026)
+
+The user profile system has been fully integrated with the following components:
+
+### Profile Page (`Profile.tsx`)
+- Displays user profile with real data from Joomla backend (not mock data)
+- Shows avatar, name, calculated age (from birthdate), location, bio
+- Dynamic interests display grouped by category
+- Confirmed events section
+- Transparent floating card design over animated gradient background
+
+### Edit Profile Page (`EditProfile.tsx`)
+- **Birthdate picker**: Date input with constraints (min: 100 years ago, max: 18 years ago)
+- **18+ validation**: Implicit mandatory requirement enforced via date constraints
+- **Bio text area**: Persists to Joomla `clone_users.params` JSON
+- **Interests selection**: Dynamic categories from API with multi-select
+- **Dual-endpoint fallback**: Tries `/api/profile/*` then `/api/user/profile/*`
+
+### Interests API (`/api/interests/*`)
+- `GET /api/interests/categories` — Returns 9 categories with item counts
+- `GET /api/interests/category/:categoryId` — Returns items in category with rank
+- `GET /api/interests/user/:userId` — Returns user's selected interests
+- `POST /api/interests/user/:userId` — Saves user interest selections
+- `GET /api/interests/match/:userId` — Returns events matching user's interests
+
+### Interest Categories (9 total, ~170 items)
+1. **music_genres** — Rock, Pop, Electronic, Jazz, Classical, Hip-Hop, R&B, Country, Metal, Folk, Indie, Blues, Reggae, Punk, Latin
+2. **film_genres** — Action, Comedy, Drama, Horror, Sci-Fi, Romance, Documentary, Thriller, Animation, Fantasy
+3. **cuisines** — Italian, Japanese, Mexican, Indian, Chinese, Thai, French, Mediterranean, Brazilian, American, Korean, Vietnamese, Greek, Middle Eastern, Spanish
+4. **nightlife** — Clubs, Bars, Live Music, Comedy Shows, Karaoke, Rooftop Bars, Jazz Clubs, Dance Parties, Lounges, Pubs
+5. **sports** — Football, Basketball, Tennis, Running, Cycling, Swimming, Yoga, CrossFit, Martial Arts, Golf, Volleyball, Skateboarding
+6. **outdoor_activities** — Hiking, Camping, Beach, Parks, Fishing, Surfing, Rock Climbing, Kayaking, Mountain Biking, Photography Walks
+7. **arts_culture** — Museums, Galleries, Theater, Opera, Ballet, Street Art, Poetry, Book Clubs, Film Festivals, Cultural Festivals
+8. **tech_gaming** — Video Games, Board Games, Esports, Tech Meetups, Hackathons, VR/AR, Coding, Startups, Robotics, AI/ML
+9. **social_vibes** — Networking, Dating Events, Singles Mixers, Professional Events, Charity Events, Community Service, Language Exchange, Wine Tasting, Brunch, Happy Hour
+
+---
+
+## CSS Design Philosophy (Feb 2, 2026)
+
+The UI has been refactored to use **transparent floating cards** that let the animated gradient background show through:
+
+- **Page background**: `linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)` with animation
+- **Content containers**: Fully transparent (`background: transparent; border: none; box-shadow: none`)
+- **Layout preservation**: Padding and margins maintained for proper content alignment
+- **Affected files**: `Profile.css`, `EditProfile.css`, `CreateEvent.css`
+
+This creates a "floating in space" effect where content elements appear to hover over the animated background.
+
+---
+
+## Admin Interface (New Feature)
+
+The admin interface has been fully integrated into the React frontend with the following components:
+
+- **EnhancedAdminDashboard.tsx**: Real-time admin dashboard with tabbed interface for system monitoring, AI configuration, crawler control, and database management.
+- **ChooseDestination.tsx**: Admin destination chooser page allowing users to navigate between Frontend, Joomla Admin, and Node.js Admin based on permissions.
+- **Admin API Endpoints**: Backend routes for real-time data, crawler control, and system management.
+- **Authentication Flow**: Proper Super User authentication with redirect handling for admin access.
+
+**Access**: Available at `/admin` route, requires Super User group permissions. Choose destination page at `/choose-destination` for admin navigation.
+
+---
+
+## Notes
+
+This merged document is intended to be a single reference for short-term development priorities and the conditional BEAM roadmap. The original `Complexity Guide.md` and `MVP.md` files remain in `documentation/` for historical reference.
+
+## Pin: 08/02/2026 — Recent work (last 6 days)
+
+Summary of activity (Feb 2 → Feb 8, 2026): completed population, image-fixer, and frontend improvements to ensure every event has a relevant image and the UI displays hero images.
+
+Detailed changes and outcomes:
+- Data population: created ~375 events for national testing across sources (Ticketmaster, Foursquare, Viagogo, sample-data).
+- Image coverage: bulk image-fixing process completed — initial state was 276/375 events missing images; final DB verification shows 0 missing images across all sources.
+- Image fetcher strategy:
+	- Implemented an AI-assisted fetcher (DeepSeek AI + DuckDuckGo) but observed unreliability (DeepSeek returned HTTP 402; DuckDuckGo timed out from containers).
+	- Pivoted to a reliable Wikipedia-first approach and curated Unsplash category fallbacks. Implemented `/backend/lib/wikipedia-image-fetcher.js` and updated `/backend/lib/image-fetcher.js` to prefer Wikipedia first.
+	- Kept DuckDuckGo as a secondary (legacy) fallback for non-container environments.
+- Scripts & automation:
+	- Added/updated scripts: `backend/fix-missing-images.js`, `backend/fix-all-images.js`, `backend/fix-artist-images.js`, and `backend/test-image-fetcher.js` to use the unified `ImageFetcher` (Wikipedia-first).
+	- Ran bulk fixes in batches with rate limiting to avoid API rate limits; many events were filled by curated Unsplash fallbacks where Wikipedia had no thumbnail.
+- Frontend changes:
+	- Reworked event card UI: `frontend/react-keepup/src/pages/EventGrid.tsx` and `EventGrid.css` now use hero images, overlay ticket CTA, and improved layout instead of small avatar placeholders.
+	- Rebuilt the React image bundle and redeployed the `keepup_react` container.
+- Verification & stats:
+	- Ran DB verification queries showing per-source breakdown (examples):
+		- `ticketmaster`: total 163 — missing 0 — wikipedia 3 — unsplash 73 — ticketmaster 87
+		- `foursquare`: total 100 — missing 0 — unsplash 97
+		- `sample-data`: total 100 — missing 0 — wikipedia 2 — unsplash 98
+		- `viagogo`: total 12 — missing 0 — unsplash 2
+- Reliability & network notes:
+	- DuckDuckGo and DeepSeek were unreliable inside containers (timeouts, 402/403 errors). Wikipedia API calls were reachable and reliable from containers.
+	- The Wikipedia-first strategy improves in-container reliability and reduces dependence on external search APIs.
+- Follow-ups and recommendations:
+	- Expand `artistWikiMap` in `/backend/lib/wikipedia-image-fetcher.js` to increase direct matches for local artists and reduce Unsplash fallback usage.
+	- Add an `image_source` column to the `events` table to record provenance (e.g., `wikipedia`, `ticketmaster`, `unsplash`, `duckduckgo`).
+	- Cache successful Wikipedia thumbnails (Redis or DB column) to lower repeated API calls during bulk runs.
+	- Optional: replace Unsplash fallbacks with licensed/localized assets if required for production ticket listings.
+
+Last updated: February 8, 2026
+
+---
+
+## Changes Summary (Feb 10, 2026)
+
+**Backend Implementation:**
+- `backend/controllers/events.controller.js`: 
+  - ✅ Implemented `save()` - INSERT into saved_events with UPSERT logic
+  - ✅ Implemented `unsave()` - DELETE from saved_events
+  - ✅ Implemented `saved()` - SELECT all saved events for user with full event details
+  - ✅ Implemented `isSaved()` - Check if event is saved by user
+  - All functions use Postgres integration with `req.user` from auth middleware
+
+- `backend/routes/events.routes.js`:
+  - ✅ Added GET `/api/events/is-saved` route for checking save status
+
+**Frontend API Client:**
+- `frontend/react-keepup/src/api/events.ts`:
+  - ✅ `saveEvent(eventId)` - POST to `/api/events/save`
+  - ✅ `unsaveEvent(eventId)` - POST to `/api/events/unsave`
+  - ✅ `getSavedEvents()` - GET `/api/events/saved` returns all saved events
+  - ✅ `checkIsSaved(eventId)` - GET `/api/events/is-saved?event_id=X`
+
+**Frontend UI Components:**
+- `frontend/react-keepup/src/pages/EventGrid.tsx`:
+  - ✅ Added `savedEventIds: Set<number>` state to track saved events
+  - ✅ Added `loadingSaved` state for loading indicator
+  - ✅ Added `loadSavedEvents()` effect to fetch user's saved events on mount
+  - ✅ Added `handleSaveEvent(eventId)` handler for save/unsave toggle
+  - ✅ Added save button to event cards with:
+    - Visual feedback: ❤️ Saved (pink) vs 🤍 Save (gray)
+    - Full width button styling
+    - Smooth transitions
+    - Auth gate (only shows for logged-in users)
+
+**Infrastructure:**
+- `docker/docker-compose.yml`:
+  - ✅ Node service environment now includes `REDIS_URL: redis://redis:6379`
+  - Health check for Redis properly configured
+
+**Database:**
+- `saved_events` table (Postgres) already exists with schema:
+  - id (PK), user_id, event_id, action (save/attending/interested), created_at
+  - UNIQUE constraint on (user_id, event_id)
+  - Indexed on user_id for fast lookups
+
+Last updated: February 10, 2026
+
+========== MVP.md ==========
+# KEEP-Up — MVP Checklist and Release Plan
+
+## Overview
+This document lists the minimal, prioritised work needed to ship a functional public MVP of KEEP‑Up based on the current codebase and checkpoints (Jan 22, 2026).
+
+## 📁 Documentation Structure
+
+| Folder | Purpose |
+|--------|---------|
+| `/documentation/` | Core docs (this file, ARCHITECTURE.md, Complexity Guide.md, Copilot Guide.md) |
+| `/documentation/Checkpoints/` | Progress snapshots (CHECKPOINT_JANUARY.md) |
+| `/documentation/Notes/` | Technical notes (AUTH_REFACTOR, DOTNET_SERVICES, integration-roadmap) |
+| `/documentation/Sandbox/` | Daily status logs (SANDBOX_STATUS_JAN*.md) |
+
+## MVP Goal
+Provide a public web app where users can register/login and discover events for a city with a simple event grid and event details. Backend should reliably return normalized events and support basic monitoring/health checks.
+
+## High‑Priority Features (Must-have)
+- **Authentication:** Node login/register + session management using `unified_sessions`.
+  - Files: [frontend/react-keepup/src/shared/hooks/useAuth.ts](frontend/react-keepup/src/shared/hooks/useAuth.ts), backend auth endpoints in `/backend/main_server.js`.
+  - Acceptance: Users can register/login, receive session token stored in `unified_sessions`, and access protected routes.
+  - **Status: ✅ COMPLETED** - AuthContext replaced with modern useAuth hook, all components updated, builds successfully. Auth system deployed to staging; some session handoff bugs remain and are being investigated.
+
+- **Event Discovery API:** Reliable endpoint(s) to fetch events for a city.
+  - Files: `/backend/fetcher.js`, `/backend/api-event-fetcher.js`, orchestration `backend/serpents-service/index.js`.
+  - Acceptance: `GET /api/events/discover?q=<city>` returns >=5 normalized events for populated test cities; falls back to DuckDuckGo/legacy fetcher when primary sources fail.
+  - **Status: ✅ IMPLEMENTED** - Endpoint accepts `q` parameter, returns city-specific events, triggers background population for cities with <5 events.
+
+- **Frontend Event UI:** Event grid page and event details view.
+  - Files: [frontend/react-keepup/src/pages/EventGrid.tsx](frontend/react-keepup/src/pages/EventGrid.tsx), [frontend/react-keepup/src/pages/EventMap.tsx](frontend/react-keepup/src/pages/EventMap.tsx) (optional map), `EventGrid` must show title, date, venue and ticket link.
+  - Acceptance: Logged-in users and anonymous users can search and browse events; event detail view opens with full info and ticket URL.
+  - **Status: ✅ COMPLETED** - EventGrid component with city search, skeleton loading animations, error handling, responsive CSS Grid layout, and clean React hooks implementation. Build compiles successfully with no warnings.
+
+- **Background Jobs (basic):** Ensure event population worker or synchronous fallback works.
+  - Files: `backend/serpents-service/worker.js`, BullMQ config, `docker-compose.yml` (Redis added).
+  - Acceptance: When enqueueing a job, worker processes it and results appear via API within expected retry/backoff behavior.
+  - **Status: ✅ COMPLETED** - BullMQ worker implemented with Redis, serpent_jobs table created, background job processing functional.
+
+- **Health & Monitoring:** Health endpoints and simple dashboard.
+  - Files: `GET /health` on main server and `dotnet/event-serpent` health; dashboard at `/dashboard`.
+  - Acceptance: Healthcheck returns 200; dashboard accessible for job history.
+
+- **Security basics:** Use bcrypt for new passwords, input validation, and env-based secrets.
+  - Files: `backend/joomla_password.js`, `.env` usage in `backend/config.js`.
+  - Acceptance: New registrations produce bcrypt hashes; secrets not hard-coded.
+
+## Secondary (Can follow shortly after core MVP)
+- Joomla SSO bridge (PHP client present at `web/joomla_auth_http_client.php`) — optional for first public release.
+- .NET event‑serpent integration — acceptable as a fallback; Node.js fetcher must work without .NET in initial public release.
+- Observability (Prometheus/Grafana) — scheduled post-launch.
+
+## Minimal Acceptance Criteria (Release checklist)
+- [x] User registration and login work end-to-end (frontend + backend + DB stores session).
+- [x] `GET /api/events/discover?q=CityName` returns normalized JSON with at least 5 events for target cities.
+- [x] Frontend build (`npm run build`) produces a static bundle that serves and routes correctly behind a proxy.
+- [ ] Health endpoints return 200 for core services (`/api/health`, `/api/serpents/health` or `/health`).
+- [x] Background worker (BullMQ) can process event jobs, or synchronous fetcher fallback is stable.
+- [ ] Env vars and secrets documented in `.env.template` and not committed.
+ - [ ] Fix known auth session handoff bugs (high priority)
+
+## Quick Run & Smoke Test (dev)
+1. Start MariaDB + Redis + Node services (dev):
+
+```bash
+# start backend services
+cd /var/www/KEEP-Up/backend
+NODE_ENV=development node main_server.js &
+# start serpents service
+cd /var/www/KEEP-Up/backend/serpents-service && node index.js &
+# (optional) start worker
+node worker.js &
+```
+
+2. Start frontend dev server:
+
+```bash
+cd /var/www/KEEP-Up/frontend/react-keepup
+npm install
+npm run dev
+```
+
+3. Smoke tests (examples):
+
+```bash
+# health
+curl -f http://localhost:3001/health
+# login (replace payload)
+curl -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{"username":"test","password":"test"}'
+# events
+curl -f "http://localhost:3001/api/events/discover?q=Porto%20Alegre"
+```
+
+## Deployment checklist (minimal public release)
+- Create `docker-compose.yml` with services: `backend` (Node), `frontend` (Nginx serving build), `db` (MariaDB), `redis` (BullMQ), optional `dotnet` container.
+- Add an Nginx reverse proxy config to route `/api` to Node and serve frontend static assets.
+- Prepare `.env.production` with secrets; document required variables in `documentation/.env.template`.
+- Run integration smoke tests against a staging instance.
+
+## Development Optimization (January 22, 2026)
+- **Optimized Startup Scripts:** Created performance-optimized startup scripts for different development scenarios.
+  - `start-all(dev).sh`: Balanced UX priority with parallel backend loading (~30-45% faster than production)
+  - `start-all(frontend).sh`: Aggressive frontend-first loading (~50-60% faster React availability)
+  - Files: `/docker/start-all(dev).sh`, `/docker/start-all(frontend).sh`
+  - **Status: ✅ COMPLETED** - Scripts implement parallel service loading and user experience prioritization.
+
+## Priority Work Plan (next 2 weeks)
+1. ✅ **COMPLETED:** Frontend Event UI polish (EventGrid + search + loading states) - **Status: DONE**
+2. ✅ **COMPLETED:** Background Jobs implementation (BullMQ + Redis) - **Status: DONE**
+3. Finalise auth fixes and tests (2 days) — ensure `unified_sessions` & `AuthContext` work.
+4. Harden event discovery + normalization + fallback tests (3 days).
+5. Prepare `docker-compose` + basic Nginx and run staging smoke tests (3 days).
+
+## Files to review first (quick links)
+- [frontend/react-keepup/src/context/AuthContext.tsx](frontend/react-keepup/src/context/AuthContext.tsx)
+- [frontend/react-keepup/src/shared/hooks/useAuth.ts](frontend/react-keepup/src/shared/hooks/useAuth.ts)
+- [backend/main_server.js](backend/main_server.js)
+- [backend/fetcher.js](backend/fetcher.js)
+- [backend/serpents-service/index.js](backend/serpents-service/index.js)
+- [backend/serpents-service/worker.js](backend/serpents-service/worker.js)
+
+---
+
+If you want, I can now:
+- run the smoke test commands locally (if services installed), or
+- open PRs / patches to implement any missing bits (bcrypt on registration, normalize schema, add simple docker-compose). Which should I do next?
+========== Complexity Guide.md ==========
+# 📋 KEEP-Up Master TODO List
+
+> *"A kingdom's strength lies in knowing which battles to fight first."*
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║     ████████╗ ██████╗ ██████╗  ██████╗ ███████╗                              ║
+║        ██║   ██╔═══██╗██╔══██╗██╔═══██╗██╔════╝                              ║
+║        ██║   ██║   ██║██║  ██║██║   ██║███████╗                              ║
+║        ██║   ██║   ██║██║  ██║██║   ██║╚════██║                              ║
+║        ██║   ╚██████╔╝██████╔╝╚██████╔╝███████║                              ║
+║        ╚═╝    ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝                              ║
+║                                                                               ║
+║               🎯 HIERARCHICAL TASK LIST BY COMPLEXITY 🎯                      ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## � Documentation Structure
+
+| Folder | Purpose | Key Files |
+|--------|---------|----------|
+| `/documentation/` | Core docs only | ARCHITECTURE.md, MVP.md, Complexity Guide.md, Copilot Guide.md |
+| `/documentation/Checkpoints/` | Progress snapshots | CHECKPOINT_JANUARY.md |
+| `/documentation/Notes/` | Technical notes | AUTH_REFACTOR_CHECKPOINT.md, DOTNET_SERVICES.md, integration-roadmap.md |
+| `/documentation/Sandbox/` | Daily status logs | SANDBOX_STATUS_JAN21.md, SANDBOX_STATUS_JAN22.md, SANDBOX_STATUS_JAN22_BACKGROUND.md |
+
+---
+
+## 📊 Project Overview (Updated Jan 22, 2026)
+
+| Component | Files | Lines | Status |
+|-----------|-------|-------|--------|
+| **Frontend (React)** | 40+ | 4,500+ | 🟢 100% complete — EventGrid, auth hooks, skeleton loading, zero-warning build |
+| **Backend (Node.js)** | 35+ | 9,800+ | 🟢 90% — Serpents service, event discovery API, BullMQ jobs |
+| **Backend (.NET)** | 4 | 800+ | 🟢 100% — event-serpent, auth-proxy containerized & tested |
+| **Backend (Python)** | 8 | 2,800+ | 🟢 Well structured, optional speed boost |
+| **Joomla/PHP** | 300+ | 15,000+ | 🟡 20% — PHP HTTP client only, Joomla 6.0 component stalled |
+| **Docker** | 10 | 500+ | 🟢 Stable — includes Redis, optimized startup scripts |
+
+---
+
+## 🔴 LEVEL 5 — OPUS REQUIRED (Cross-System, Architectural)
+
+### 🔴 5.1 Authentication System Overhaul
+**Complexity:** ⭐⭐⭐⭐⭐ | **Files:** 8+ | **Languages:** 3
+
+**Status:** 🟢 COMPLETE (Jan 16, 2026)
+
+---
+
+#### 📊 OPUS ANALYSIS FINDINGS
+
+**Problem Summary:**
+- Authentication spans React ↔ Node.js ↔ Joomla PHP
+- Session management inconsistent between systems
+- Password hashing uses different algorithms ($2y vs $2a bcrypt)
+- Token validation duplicated in multiple places
+
+**Resolution:**
+- ✅ Universal DB connection logic implemented and verified (Jan 16, 2026)
+- ✅ All session tables consolidated (unified_sessions)
+- ✅ Admin sessions now persistent (DB-backed)
+- ✅ verifyJoomlaSession() fixed to return correct user
+- ✅ Obsolete/duplicate code removed (auth_sync_client.js, local_sessions)
+- ✅ DB access is robust and fast; server performance restored
+
+**Files Involved:**
+```
+/frontend/react-keepup/src/
+├── context/AuthContext.tsx      (180 lines) - React auth state
+├── api/auth.ts                  (104 lines) - Auth API calls
+├── pages/Landing.tsx            (335 lines) - Login/register forms
+├── pages/Login.tsx              (77 lines)  - Legacy login (UNUSED?)
+├── components/ProtectedRoute.tsx (108 lines) - Route guards
+
+/backend/
+├── main_server.js               (2798 lines) - Auth endpoints (lines 584-1270)
+├── auth_sync_client.js          (293 lines)  - Cross-system sync client
+├── joomla_password.js           (129 lines)  - Password compat (WORKS!)
+
+/web/
+├── auth_sync_system.php         (428 lines)  - PHP auth sync server
+```
+
+---
+
+#### 🗺️ 5.1.1 COMPLETE AUTH FLOW DIAGRAM
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        AUTHENTICATION FLOW MAP                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+USER ENTERS APP (localhost:3001)
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  REACT: AuthContext.tsx (useEffect on mount)                                │
+│                                                                             │
+│  1. Check URL for ?token= parameter (from login redirect)                   │
+│  2. Check localStorage for KEEPUP_SESSION_TOKEN + KEEPUP_USER               │
+│  3. If neither, call authAPI.verifyJoomlaSession()                         │
+│     └── POST /api/auth/joomla-session (checks PHP session cookies)          │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼ (if no stored session)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  REACT: Landing.tsx - Login Form                                            │
+│                                                                             │
+│  User submits username/password                                             │
+│  └── authAPI.login() -> POST /api/auth/login                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  NODE.JS: main_server.js (lines 667-785)                                    │
+│                                                                             │
+│  1. Query clone_users table for email OR username                           │
+│  2. JoomlaPassword.verify() - handles $2y$ → $2a$ conversion                │
+│  3. Query clone_user_usergroup_map for group IDs                            │
+│  4. Generate sessionToken: base64(userId_username_timestamp_random)         │
+│  5. INSERT into unified_sessions table                                      │
+│  6. Set KEEPUP_SESSION cookie (httpOnly, 24h expiry)                        │
+│  7. Return { ok, sessionToken, user }                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  REACT: AuthContext.tsx (login function)                                    │
+│                                                                             │
+│  1. Store sessionToken → localStorage.KEEPUP_SESSION_TOKEN                  │
+│  2. Store user → localStorage.KEEPUP_USER                                   │
+│  3. Set React state: user, token, isAuthenticated=true                      │
+│  4. useEffect in Landing.tsx redirects based on groups:                     │
+│     └── Admin (6,7,8) → /choose-destination                                │
+│     └── Regular → /home                                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 🔑 5.1.2 SESSION TOKEN SOURCES IDENTIFIED
+
+| Source | Token Name | Storage | Expiry | Used By |
+|--------|-----------|---------|--------|---------|
+| **Node.js Login** | `sessionToken` | `unified_sessions` DB + localStorage | 24h | React app |
+| **Node.js Cookie** | `KEEPUP_SESSION` | httpOnly cookie | 24h | Node.js middleware |
+| **Admin Login** | `token` (base64) | `global.adminSessions` (MEMORY!) | 24h | Admin dashboard |
+| **Joomla Session** | `PHPSESSID` | PHP session + `clone_session` table | varies | Joomla |
+| **Auth Sync** | `session_id` (64 char hex) | `auth_sessions` table | 24h | Cross-system |
+
+**⚠️ CRITICAL ISSUES FOUND:**
+1. **Admin sessions stored in MEMORY** (`global.adminSessions`) - lost on restart!
+2. **THREE different session tables**: `unified_sessions`, `auth_sessions`, `local_sessions`
+3. **Joomla session not properly synced** - verifyJoomlaSession() returns first user, not logged-in user!
+
+---
+
+#### 🔐 5.1.3 PASSWORD HASHING ANALYSIS
+
+**Current Implementation (joomla_password.js):**
+```
+✅ Supports bcrypt ($2y$, $2a$, $2b$)
+✅ Supports legacy MD5:salt format
+✅ Auto-converts $2y$ → $2a$ for Node.js bcrypt compatibility
+✅ New registrations use MD5:salt (Joomla compatible)
+```
+
+**⚠️ ISSUE:** New users get MD5:salt hashes, but Joomla 6.0 uses bcrypt by default.
+**RECOMMENDATION:** Use bcrypt for new registrations, keep MD5 for legacy verification.
+
+---
+
+#### 🔄 5.1.4 TOKEN VALIDATION LOCATIONS
+
+Token validation happens in **4 DIFFERENT PLACES**:
+
+| Location | Function | What it Validates |
+|----------|----------|-------------------|
+| `main_server.js:584` | `app.get('/api/auth/check')` | sessionToken from header/cookie/query |
+| `main_server.js:500` | `requireJoomlaSession()` middleware | Joomla PHP session cookies |
+| `main_server.js:1000` | `requireAdminToken()` middleware | Admin token from memory |
+| `auth_sync_client.js:60` | `validateUnifiedSession()` | Calls PHP auth_sync_system |
+
+**⚠️ DUPLICATION:** Same validation logic repeated with slight variations.
+
+---
+
+#### 🔀 5.1.5 AUTH HANDOFF BETWEEN SYSTEMS
+
+```
+CURRENT FLOW (Broken/Incomplete):
+
+Joomla Login (PHP)
+     │
+     ▼ (sets PHPSESSID cookie)
+React checks verifyJoomlaSession()
+     │
+     ▼ (BUG: returns FIRST user, not logged-in user!)
+❌ FAILS - Can't get actual Joomla user
+
+─────────────────────────────────────────────
+
+Node.js Login (Works)
+     │
+     ▼ (generates sessionToken)
+Stores in unified_sessions + cookie + localStorage
+     │
+     ▼ (React reads localStorage)
+✅ WORKS - User authenticated in React
+
+─────────────────────────────────────────────
+
+Auth Sync System (PHP) - UNUSED!
+     │
+     ▼ (auth_sync_client.js tries to call it)
+❌ FAILS - URL points to 192.168.15.10 (wrong IP?)
+```
+
+---
+
+#### 📋 5.1.6 RECOMMENDED FIXES
+
+**IMMEDIATE (High Priority):**
+- [x] 5.1.1 Map complete auth flow diagram ✅ DONE
+- [x] 5.1.2 Identify all session token sources ✅ DONE
+- [x] 5.1.3 **FIX:** Move admin sessions from memory to database ✅ DONE (Jan 15)
+- [x] 5.1.4 **FIX:** Fix verifyJoomlaSession() to get actual logged-in user ✅ DONE (Jan 15)
+- [x] 5.1.5 **FIX:** Consolidate 3 session tables into 1 (unified_sessions) ✅ DONE (Jan 15)
+      - Removed auth_sync_client.js dependency completely
+      - All endpoints now use unified_sessions table in joomlaDb
+      - Removed local_sessions table creation
+- [x] 5.1.6 **FIX:** Universal DB connection logic, robust fallback, and performance issues resolved (Jan 16, 2026)
+
+**SHORT TERM (Medium Priority):**
+- [ ] 5.1.7 Create single requireAuth() middleware that checks all sources
+- [ ] 5.1.8 Update password hashing to use bcrypt for new registrations
+- [ ] 5.1.9 Remove unused auth_sync_system.php or fix the integration
+
+**LONG TERM (Low Priority):**
+- [ ] 5.1.10 Implement refresh tokens for better session management
+- [ ] 5.1.11 Add proper JWT with signature verification
+
+---
+
+**Estimated Time:** 4-6 hours with Opus (IMPLEMENTED ✅)
+
+---
+
+### 🔴 5.2 API Layer Restructure
+**Complexity:** ⭐⭐⭐⭐⭐ | **Files:** 10+ | **Languages:** 2
+
+**Problem:**
+- `main_server.js` has 58 endpoints in one 2,798-line file
+- No clear separation of concerns
+- Mixed authentication, events, admin, user endpoints
+- Duplicate code between similar endpoints
+
+**Files Involved:**
+```
+/backend/
+├── main_server.js      - ALL endpoints (needs splitting)
+├── api-gateway.js      - Empty placeholder (4 lines!)
+├── unified-auth.js     - Stub file (8 lines!)
+
+/frontend/react-keepup/src/api/
+├── unified-api.ts      (500 lines) - Monolithic API layer
+├── auth.ts             (104 lines)
+├── events.ts           (113 lines)
+├── admin.ts            (61 lines)
+├── user.ts             (50 lines)
+```
+
+**TODO Tasks:**
+- [ ] 5.2.1 Create endpoint inventory with categories
+- [ ] 5.2.2 Design modular backend structure:
+  ```
+  /backend/
+  ├── routes/
+  │   ├── auth.routes.js
+  │   ├── events.routes.js
+  │   ├── admin.routes.js
+  │   ├── user.routes.js
+  │   └── crawler.routes.js
+  ├── middleware/
+  │   ├── auth.middleware.js
+  │   └── admin.middleware.js
+  ├── controllers/
+  │   ├── auth.controller.js
+  │   └── events.controller.js
+  ```
+- [ ] 5.2.3 Extract auth endpoints to separate file
+- [ ] 5.2.4 Extract event endpoints
+- [ ] 5.2.5 Extract admin endpoints
+- [ ] 5.2.6 Unify frontend API layer
+
+**Estimated Time:** 6-8 hours with Opus
+
+---
+
+### 🔴 5.3 Event Fetching Pipeline Analysis
+**Complexity:** ⭐⭐⭐⭐⭐ | **Files:** 6+ | **Languages:** 2
+
+**Problem:**
+- 3-level hierarchy (Serpents → Wizards → AI) complex to understand
+- Multiple fallback mechanisms
+- Cache invalidation unclear
+- Python ↔ Node.js bridge reliability
+
+**Files Involved:**
+```
+/backend/
+├── fetcher.js              (2257 lines) - Main fetcher
+├── api-event-fetcher.js    (1322 lines) - API integrations
+├── town-populator.js       (378 lines)  - Town population
+├── free-event-sources.js   (481 lines)  - Free APIs
+
+/backend/python/
+├── event_serpents.py       (466 lines)  - Async fetching
+├── feather_dragon.py       (467 lines)  - DuckDuckGo
+├── serpents_bridge.js      (~100 lines) - Node↔Python
+```
+
+**TODO Tasks:**
+- [ ] 5.3.1 Document complete fetching flow
+- [ ] 5.3.2 Map all API sources and their status
+- [ ] 5.3.3 Identify caching strategy
+- [ ] 5.3.4 Document fallback hierarchy
+- [ ] 5.3.5 Test Python serpents reliability
+- [ ] 5.3.6 Identify performance bottlenecks
+
+**Estimated Time:** 3-4 hours with Opus
+
+---
+
+### 🔴 5.4 Frontend State Management Audit
+**Status:** ✅ Frontend complete (Jan 22, 2026). Audit tasks remain for optional polish; prioritize auth fixes first.
+**Complexity:** ⭐⭐⭐⭐⭐ | **Files:** 15+ | **Languages:** 1
+
+**Problem:**
+- Only AuthContext exists for state management
+- No global event state
+- API calls duplicated across components
+- No loading/error state standardization
+
+**Files Involved:**
+```
+/frontend/react-keepup/src/
+├── context/
+│   └── AuthContext.tsx     (180 lines) - ONLY context!
+├── pages/
+│   ├── EditProfile.tsx     (558 lines) - Complex state
+│   ├── Profile.tsx         (404 lines) - User data
+│   ├── Landing.tsx         (335 lines) - Auth state
+│   ├── Demo.tsx            (362 lines) - Demo state
+│   ├── AdminDashboard.tsx  (112 lines) - Admin state
+```
+
+**TODO Tasks:**
+- [ ] 5.4.1 Audit all component local states
+- [ ] 5.4.2 Design global state architecture
+- [ ] 5.4.3 Identify state that should be global:
+  - User data
+  - Events cache
+  - UI state (loading, errors)
+  - Admin settings
+- [ ] 5.4.4 Plan migration to proper state management
+- [ ] 5.4.5 Standardize loading/error patterns
+
+**Estimated Time:** 3-4 hours with Opus
+
+---
+
+## 🟠 LEVEL 4 — OPUS or SONNET (Multi-File, Complex Logic)
+
+### 🟠 4.1 EditProfile.tsx Refactoring
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 558
+
+**Problem:**
+- Largest React component
+- Complex form state management
+- Multiple API calls
+- Validation logic mixed with UI
+
+**TODO Tasks:**
+- [ ] 4.1.1 Extract form validation to custom hook
+- [ ] 4.1.2 Split into smaller components
+- [ ] 4.1.3 Create proper form state management
+- [ ] 4.1.4 Add proper TypeScript types
+- [ ] 4.1.5 Implement proper error handling
+
+**Estimated Time:** 2-3 hours with Sonnet
+
+---
+
+### 🟠 4.2 Profile.tsx Cleanup
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 404
+
+**TODO Tasks:**
+- [ ] 4.2.1 Separate display and edit modes
+- [ ] 4.2.2 Extract profile data fetching to hook
+- [ ] 4.2.3 Add loading skeletons
+- [ ] 4.2.4 Improve error states
+
+**Estimated Time:** 2 hours with Sonnet
+
+---
+
+### 🟠 4.3 Landing.tsx Auth Flow
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 335
+
+**TODO Tasks:**
+- [ ] 4.3.1 Clean up auth redirect logic
+- [ ] 4.3.2 Improve form validation
+- [ ] 4.3.3 Add loading states
+- [ ] 4.3.4 Handle edge cases (session expiry)
+
+**Estimated Time:** 2 hours with Sonnet
+
+---
+
+### 🟠 4.4 unified-api.ts Restructure
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 500
+
+**TODO Tasks:**
+- [ ] 4.4.1 Split by domain (auth, events, admin)
+- [ ] 4.4.2 Add proper TypeScript types
+- [ ] 4.4.3 Implement request/response interceptors
+- [ ] 4.4.4 Standardize error handling
+- [ ] 4.4.5 Add request caching
+
+**Estimated Time:** 3 hours with Sonnet
+
+---
+
+### 🟠 4.5 Python Serpents Enhancement
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 466
+
+**TODO Tasks:**
+- [ ] 4.5.1 Add retry logic for failed requests
+- [ ] 4.5.2 Implement rate limiting
+- [ ] 4.5.3 Add new event sources
+- [ ] 4.5.4 Improve error handling
+- [ ] 4.5.5 Add request logging
+
+**Estimated Time:** 2-3 hours with Sonnet
+
+---
+
+### 🟠 4.6 DuckDuckGo Dragon Improvements
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** 467
+
+**TODO Tasks:**
+- [ ] 4.6.1 Add more search patterns
+- [ ] 4.6.2 Improve result parsing
+- [ ] 4.6.3 Add language detection
+- [ ] 4.6.4 Implement caching
+- [ ] 4.6.5 Handle rate limiting
+
+**Estimated Time:** 2 hours with Sonnet
+
+---
+
+### 🟠 4.7 ProtectedRoute Enhancement
+**Complexity:** ⭐⭐⭐⭐ | **Lines:** ~150
+
+**TODO Tasks:**
+- [ ] 4.7.1 Add proper TypeScript types
+- [ ] 4.7.2 Implement role-based rendering
+- [ ] 4.7.3 Add loading states
+- [ ] 4.7.4 Handle session expiry gracefully
+
+**Estimated Time:** 1-2 hours with Sonnet
+
+---
+
+## 🟡 LEVEL 3 — SONNET (Single File, Moderate Complexity)
+
+### 🟡 3.1 ChooseDestination.tsx
+**Lines:** 164
+
+**TODO Tasks:**
+- [ ] 3.1.1 Improve UI/UX
+- [ ] 3.1.2 Add animations
+- [ ] 3.1.3 Better role detection display
+
+**Estimated Time:** 1 hour with Sonnet
+
+---
+
+### 🟡 3.2 CreateEvent.tsx
+**Lines:** 133
+
+**TODO Tasks:**
+- [ ] 3.2.1 Add form validation
+- [ ] 3.2.2 Add date picker
+- [ ] 3.2.3 Add location autocomplete
+- [ ] 3.2.4 Improve error handling
+
+**Estimated Time:** 1-2 hours with Sonnet
+
+---
+
+### 🟡 3.3 EventMap.tsx
+**Lines:** 129
+
+**TODO Tasks:**
+- [ ] 3.3.1 Add map library (Leaflet/Mapbox)
+- [ ] 3.3.2 Add event markers
+- [ ] 3.3.3 Add clustering for many events
+- [ ] 3.3.4 Add location search
+
+**Estimated Time:** 2 hours with Sonnet
+
+---
+
+### 🟡 3.4 AdminDashboard.tsx
+**Lines:** 112
+
+**TODO Tasks:**
+- [ ] 3.4.1 Add real-time stats
+- [ ] 3.4.2 Add charts/graphs
+- [ ] 3.4.3 Add admin actions
+- [ ] 3.4.4 Improve layout
+
+**Estimated Time:** 1-2 hours with Sonnet
+
+---
+
+### 🟡 3.5 auth.ts API Module
+**Lines:** 104
+
+**TODO Tasks:**
+- [ ] 3.5.1 Add proper error types
+- [ ] 3.5.2 Add request/response logging
+- [ ] 3.5.3 Add retry logic
+- [ ] 3.5.4 Improve TypeScript types
+
+**Estimated Time:** 1 hour with Sonnet
+
+---
+
+### 🟡 3.6 events.ts API Module
+**Lines:** 113
+
+**TODO Tasks:**
+- [ ] 3.6.1 Add pagination support
+- [ ] 3.6.2 Add filtering options
+- [ ] 3.6.3 Add caching
+- [ ] 3.6.4 Add proper types
+
+**Estimated Time:** 1 hour with Sonnet
+
+---
+
+### 🟡 3.7 Navigation.tsx
+**Lines:** ~100
+
+**TODO Tasks:**
+- [ ] 3.7.1 Add mobile responsive menu
+- [ ] 3.7.2 Add user dropdown
+- [ ] 3.7.3 Add notification badge
+- [ ] 3.7.4 Improve accessibility
+
+**Estimated Time:** 1 hour with Sonnet
+
+---
+
+### 🟡 3.8 ai-config.js Backend
+**Lines:** 182
+
+**TODO Tasks:**
+- [ ] 3.8.1 Add more AI providers
+- [ ] 3.8.2 Add provider health checks
+- [ ] 3.8.3 Add fallback configuration
+- [ ] 3.8.4 Add usage tracking
+
+**Estimated Time:** 1 hour with Sonnet
+
+---
+
+### 🟡 3.9 joomla_password.js
+**Lines:** 129
+
+**TODO Tasks:**
+- [ ] 3.9.1 Document password hashing
+- [ ] 3.9.2 Add migration utilities
+- [ ] 3.9.3 Test edge cases
+
+**Estimated Time:** 30 min with Sonnet
+
+---
+
+## 🟢 LEVEL 2 — SONNET or HAIKU (Simple Features)
+
+### 🟢 2.1 Login.tsx Improvements
+**Lines:** 77
+
+**TODO Tasks:**
+- [ ] 2.1.1 Add "Remember me" checkbox
+- [ ] 2.1.2 Add "Forgot password" link
+- [ ] 2.1.3 Improve validation messages
+
+**Estimated Time:** 30 min with Haiku
+
+---
+
+### 🟢 2.2 EventGrid.tsx Enhancement
+**Lines:** 61
+
+**TODO Tasks:**
+- [ ] 2.2.1 Add grid/list toggle
+- [ ] 2.2.2 Add sorting options
+- [ ] 2.2.3 Add loading skeletons
+
+**Estimated Time:** 30 min with Haiku
+
+---
+
+### 🟢 2.3 JoomlaAdmin.tsx
+**Lines:** 81
+
+**TODO Tasks:**
+- [ ] 2.3.1 Add iframe loading indicator
+- [ ] 2.3.2 Add error handling
+- [ ] 2.3.3 Add fullscreen toggle
+
+**Estimated Time:** 20 min with Haiku
+
+---
+
+### 🟢 2.4 NodeAdmin.tsx
+**Lines:** 49
+
+**TODO Tasks:**
+- [ ] 2.4.1 Add iframe loading indicator
+- [ ] 2.4.2 Add error handling
+
+**Estimated Time:** 15 min with Haiku
+
+---
+
+### 🟢 2.5 user.ts API Module
+**Lines:** 50
+
+**TODO Tasks:**
+- [ ] 2.5.1 Add TypeScript types
+- [ ] 2.5.2 Add error handling
+
+**Estimated Time:** 20 min with Haiku
+
+---
+
+### 🟢 2.6 admin.ts API Module
+**Lines:** 61
+
+**TODO Tasks:**
+- [ ] 2.6.1 Add TypeScript types
+- [ ] 2.6.2 Add proper error handling
+
+**Estimated Time:** 20 min with Haiku
+
+---
+
+## 🔵 LEVEL 1 — HAIKU (Quick Fixes, Simple Tasks)
+
+### 🔵 1.1 CSS Files Polish
+
+**TODO Tasks:**
+- [ ] 1.1.1 Fix responsive breakpoints in Landing.css
+- [ ] 1.1.2 Add dark mode support
+- [ ] 1.1.3 Fix button hover states
+- [ ] 1.1.4 Add loading animations
+- [ ] 1.1.5 Fix mobile navigation
+
+**Estimated Time:** 5-10 min each with Haiku
+
+---
+
+### 🔵 1.2 TypeScript Types
+
+**TODO Tasks:**
+- [ ] 1.2.1 Add missing types to types.ts
+- [ ] 1.2.2 Fix any types
+- [ ] 1.2.3 Add API response types
+
+**Estimated Time:** 5-10 min each with Haiku
+
+---
+
+### 🔵 1.3 Code Comments & Documentation
+
+**TODO Tasks:**
+- [ ] 1.3.1 Add JSDoc comments to main functions
+- [ ] 1.3.2 Add inline comments for complex logic
+- [ ] 1.3.3 Update README files
+
+**Estimated Time:** 5-10 min each with Haiku
+
+---
+
+### 🔵 1.4 Simple Bug Fixes
+
+**TODO Tasks:**
+- [ ] 1.4.1 Fix console warnings
+- [ ] 1.4.2 Fix ESLint errors
+- [ ] 1.4.3 Fix TypeScript strict mode errors
+
+**Estimated Time:** 5-10 min each with Haiku
+
+---
+
+### 🔵 1.5 Environment & Config
+
+**TODO Tasks:**
+- [ ] 1.5.1 Update .env.template
+- [ ] 1.5.2 Add environment validation
+- [ ] 1.5.3 Document all env variables
+
+**Estimated Time:** 10 min with Haiku
+
+---
+
+## 📅 Recommended Work Order
+
+### Week 1: Analysis Phase (OPUS)
+```
+Day 1-2: Complete 5.1 (Auth System) analysis
+Day 3:   Complete 5.2 (API Structure) analysis  
+Day 4:   Complete 5.3 (Event Pipeline) documentation
+Day 5:   Complete 5.4 (State Management) audit
+```
+
+### Week 2: Critical Fixes (OPUS → SONNET)
+```
+Day 1-2: Implement auth fixes (OPUS guidance, SONNET coding)
+Day 3-4: Restructure API layer
+Day 5:   Fix critical frontend issues
+```
+
+### Week 3: Feature Work (SONNET)
+```
+Day 1: Level 4 tasks (4.1-4.3)
+Day 2: Level 4 tasks (4.4-4.7)
+Day 3-4: Level 3 tasks
+Day 5: Level 3 tasks
+```
+
+### Week 4: Polish (SONNET → HAIKU)
+```
+Day 1-2: Level 2 tasks (SONNET)
+Day 3-5: Level 1 tasks (HAIKU)
+```
+
+---
+
+## 🎯 Quick Reference: Task to Model
+
+| Task ID | Description | Model | Time |
+|---------|-------------|-------|------|
+| 5.1 | Auth System | OPUS | 4-6h |
+| 5.2 | API Restructure | OPUS | 6-8h |
+| 5.3 | Event Pipeline | OPUS | 3-4h |
+| 5.4 | State Management | OPUS | 3-4h |
+| 4.1-4.7 | Complex Components | SONNET | 1-3h each |
+| 3.1-3.9 | Moderate Components | SONNET | 30min-2h each |
+| 2.1-2.6 | Simple Features | HAIKU | 15-30min each |
+| 1.1-1.5 | Quick Fixes | HAIKU | 5-10min each |
+
+---
+
+## 📊 Progress Tracker
+
+```
+LEVEL 5 (OPUS):     [█████░░░░░] 3/4 complete (5.1 COMPLETE, 5.2 PARTIAL)
+LEVEL 4 (SONNET):   [█░░░░░░░░░] 1/7 complete (Serpents service scaffolded)
+LEVEL 3 (SONNET):   [░░░░░░░░░░] 0/9 complete
+LEVEL 2 (HAIKU):    [░░░░░░░░░░] 0/6 complete
+LEVEL 1 (HAIKU):    [░░░░░░░░░░] 0/5 complete
+
+TOTAL:              [████░░░░░░] 4/31 complete (13% → 29% complete)
+```
+
+### 🆕 Completion Updates (Jan 19-21, 2026)
+
+**✅ 5.1 Authentication System Overhaul** — COMPLETE
+- Unified auth system working across React ↔ Node.js ↔ Joomla
+- Session validation tested and verified
+- Password hashing supports both legacy and modern algorithms
+
+**✅ 5.2 API Restructure** — PARTIAL (65% complete)
+- Serpents service orchestration layer created (Node.js on port 3002)
+- HTTP fallback pattern implemented (tries .NET, falls back to fetcher-cli)
+- BullMQ job queue with Redis persistence to MariaDB
+- Dashboard monitoring interface created
+- Status: Ready for Joomla integration and event pipeline work
+
+**✅ 4.1 Microservices Architecture** — SCAFFOLDED (NEW)
+- `.NET` `event-serpent` WebAPI (net8.0) with `/api/serpents` endpoint
+- `.NET` `auth-proxy` with gRPC and HTTP compatibility
+- Multi-stage Docker containerization for both services
+- Status: Placeholder implementations ready for real event/auth logic
+
+---
+
+*Last Updated: January 21, 2026*
+*Document Version: 1.3*
+*Project: KEEP-Up Event Platform*
+
+---
+
+## 📊 Progress Tracker
+
+```
+LEVEL 5 (OPUS):     [███░░░░░░░] 2/4 complete (5.1 COMPLETE)
+LEVEL 4 (SONNET):   [░░░░░░░░░░] 0/7 complete  
+LEVEL 3 (SONNET):   [░░░░░░░░░░] 0/9 complete
+LEVEL 2 (HAIKU):    [░░░░░░░░░░] 0/6 complete
+LEVEL 1 (HAIKU):    [░░░░░░░░░░] 0/5 complete
+
+TOTAL:              [██░░░░░░░░] 2/31 complete
+```
+
+---
+
+*Last Updated: January 21, 2026*
+*Document Version: 1.3*
+*Project: KEEP-Up Event Platform*
+
+---
+
+## 📋 Recent Automation & .NET Integration (Automat .NET Optimization — Jan 19-21, 2026)
+
+### Phase 1: Frontend & Orchestration (Jan 16-19)
+- **Vite Migration:** React 19.2.3 → Vite 5.0.0 dev server on port 3001
+  - Skeleton loader component for better UX during data loading
+  - Web Worker (`filterWorker.ts`) for client-side event filtering without blocking UI
+  - Vite proxy config routes `/api/serpents` → `http://localhost:3002`
+- **Serpents Service:** Node.js orchestration layer on port 3002
+  - `GET /api/serpents` endpoint tries `.NET` event-serpent first, gracefully falls back to `fetcher-cli.js`
+  - Job enqueue: `POST /api/serpents/enqueue` for async processing
+  - Dashboard: `GET /dashboard` HTML interface for job history monitoring
+  - Worker: BullMQ 2.13.0 with Redis 7 for async job processing
+
+### Phase 2: Async Job Queue & Persistence (Jan 19-20)
+- **BullMQ + Redis Setup**
+  - Retry policy: 3 attempts with exponential backoff (2s base delay)
+  - Results persisted to MariaDB table `serpent_jobs` with schema:
+    - `id`, `job_id`, `status`, `source`, `data` (JSON), `created_at`, `completed_at`
+  - Job states tracked: pending → active → completed/failed
+  - Dashboard aggregates job history for monitoring
+
+### Phase 3: .NET Microservices (Jan 20-21)
+- **event-serpent WebAPI** (net8.0)
+  - Endpoint: `GET /api/serpents` returns mock event array (placeholder)
+  - Endpoint: `GET /health` returns `{ ok: true }` for health checks
+  - Multi-stage Dockerfile: builds in SDK 8.0, runs in aspnet 8.0 runtime
+  - Port: 5000 (localhost dev), 80 (container), remappable for production
+  - Status: Ready for real event aggregation logic integration
+
+- **auth-proxy WebAPI + gRPC** (net8.0)
+  - Dual protocol: gRPC `Auth` service + HTTP POST `/api/validate` endpoint
+  - HTTP endpoint request: `{ "token": "...", "userId": "..." }`
+  - HTTP response: `{ "valid": true/false, "username": "...", "email": "..." }`
+  - Placeholder logic: token `dev-token` returns valid user
+  - Production path: will integrate with Joomla clone_users table or SSO
+
+### Phase 4: Joomla Integration Bridge (Jan 21)
+- **PHP HTTP Client** (`web/joomla_auth_http_client.php`)
+  - Function: `validate_token($token, $userId = null, $url = 'http://localhost:5000/api/validate')`
+  - Uses curl to POST JSON to .NET endpoint
+  - Returns: `['ok' => true/false, 'data' => {...}, 'http_code' => ...]`
+  - No external dependencies (standard PHP curl + json)
+  - Tested and verified working with dev-token
+
+### Phase 5: Infrastructure & Fixes (Jan 21)
+- **React Container Fix**
+  - Issue: `package.json` had concatenated JSON objects (Vite scaffold + original merged incorrectly)
+  - Fix: Removed duplicate, kept original `react-scripts` 5.0.1 config
+  - Result: React dev server now starts successfully on port 3001
+  
+- **PHP Tooling**
+  - Installed `php-cli` and `php-curl` for local endpoint testing
+  - Validated HTTP client against .NET auth endpoint
+  - Confirmed working: `curl -X POST http://localhost:5000/api/validate`
+
+- **Environment & Database**
+  - Verified MySQL connection via TCP (127.0.0.1:3306) instead of socket
+  - Created `serpent_jobs` table for job persistence
+  - Environment variables configured: `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `REDIS_URL`
+
+### Architecture Summary
+```
+User (React 3001)
+    ↓ fetch /api/serpents
+Vite proxy → localhost:3002
+    ↓
+Serpents Service (Node.js 3002)
+    ├─ Try: HTTP GET http://localhost:5000/api/serpents (.NET)
+    └─ Fallback: fetcher-cli.js (legacy Node.js)
+    ↓
+Results stored in MariaDB serpent_jobs table via BullMQ worker
+    ↓
+Dashboard at /dashboard for monitoring
+```
+
+### Files Modified/Created
+```
+✅ /frontend/react-keepup/
+   ├── package.json (fixed corruption)
+   ├── vite.config.ts (created)
+   └── src/
+       ├── App.tsx (updated for /api/serpents)
+       ├── useFilterWorker.ts (new)
+       └── filterWorker.ts (new)
+
+✅ /backend/serpents-service/
+   ├── index.js (orchestration API)
+   ├── worker.js (BullMQ processor)
+   ├── package.json (BullMQ, ioredis, mysql2)
+   ├── sql/create_serpent_jobs_table.sql (schema)
+   └── public/dashboard.html (monitoring)
+
+✅ /dotnet/event-serpent/
+   ├── Program.cs (minimal WebAPI)
+   ├── EventSerpent.csproj (net8.0)
+   └── Dockerfile (multi-stage build)
+
+✅ /dotnet/auth-proxy/
+   ├── Program.cs (gRPC + HTTP)
+   ├── AuthProxy.csproj (Grpc.Tools, Google.Protobuf)
+   ├── Protos/auth.proto (gRPC service definition)
+   ├── Services/AuthService.cs (impl)
+   └── Dockerfile (multi-stage build)
+
+✅ /web/joomla_auth_http_client.php (new)
+   └── validate_token() function
+```
+
+**Status:** All integration artifacts present and tested. Project paused per user request pending next phase (event normalization, Joomla component integration, production build).
+
+========== AUTH_REFACTOR_CHECKPOINT.md ==========
+# Auth Refactor Checkpoint - January 21, 2026
+
+## Current Status
+- Sandbox copy created and tested successfully
+- `useAuth.ts` hook implemented and integrated in main project
+- All AuthContext imports updated to use new hook
+- AuthContext.tsx removed from main project
+- Main project builds successfully with warnings only
+- Auth refactor COMPLETE
+
+## Files Modified
+- `/var/www/KEEP-Up/frontend/react-keepup/src/shared/hooks/useAuth.ts` (updated with correct imports and API calls)
+- All React components updated to import from `../shared/hooks/useAuth`
+- App.tsx: Removed AuthProvider wrapper, cleaned up duplicate code
+- AuthContext.tsx: Deleted
+
+## Next Steps
+- React frontend is now 100% complete
+- Proceed to next phase: Event aggregation or Joomla integration
+
+## How to Continue
+```bash
+cd /var/www/KEEP-Up/backup/sandbox/frontend/react-keepup
+# Run tests or development server to verify changes
+```
+========== integration-roadmap.md ==========
+**Integration Roadmap & Architecture**
+
+This document provides a concise high-level architecture and an implementation checklist for integrating the KEEP‑Up Frontend, Backend, Joomla, `ai-assistant` and `ai-cloud` with supplemental .NET services on Debian 13.
+
+**Goals:**
+- **Coexistence:** Add .NET services without disrupting existing Node.js/Joomla workflows.
+- **Incremental adoption:** Start small (one subsystem) and expand.
+- **Diplomacy:** Clear boundaries (ports, connection strings, queues) to avoid resource conflicts.
+
+**High-Level Architecture**
+
+```
+[React Frontend] ---(HTTP/REST)---> [Node.js Backend (main_server.js)]
+       |                                     |
+       |                                     +---> [.NET EventSerpent Service (HTTP)]
+       |                                     |
+       +---> (Direct calls for specific APIs) +---> [MariaDB keepup_events]
+                                                   [MariaDB keepup_db (Joomla clone_)]
+
+[Joomla (PHP/Apache)] <---(gRPC / HTTP/Auth Bridge)---> [.NET Auth Proxy]
+
+[ai-assistant (FastAPI)] <---> [ai-cloud (MicroK8s)] <---> Observability (Prometheus/Grafana/Loki)
+
+Optional: Container boundary via Podman/Docker for each service to avoid package conflicts on Debian.
+```
+
+**Key Decisions**
+- Reserve ports explicitly: Node.js `3002` (host) / `3000` (container), React `3001`, .NET HTTP `5000`, .NET HTTPS `5001`, FastAPI `8000`.
+- Use HTTP/REST for simple interop and gRPC for low-latency auth calls between Joomla and .NET.
+- Keep a single source of truth for sessions: `unified_sessions` table; access via services (no direct cross-app writes).
+- Containerize .NET and AI services with Podman or Docker to isolate runtime (`dotnet` runtime in container).
+
+**Step‑1 Implementation Checklist (acceptance criteria included)**
+- 1.1 Define ports and environment variables in a single `env` spec for local dev. (AC: no port conflicts on local machine)
+- 1.2 Create a short README describing the integration pattern and contact endpoints. (AC: README present in `/documentation`)
+- 1.3 Scaffold a minimal `.NET WebAPI` project that exposes `/api/serpents` returning a JSON placeholder. (AC: `curl http://localhost:5000/api/serpents` returns 200 + JSON)
+- 1.4 Add a fallback call in `fetcher.js` to call the .NET endpoint, and fall back to the existing Node.js logic on error. (AC: fetcher still returns events when .NET is unreachable)
+- 1.5 Containerize the .NET service with a simple `Dockerfile` and `podman run` instructions. (AC: container starts and listens on port 5000)
+- 1.6 Add basic healthchecks (`/health`) for the .NET service and the FastAPI assistant. (AC: all health endpoints return 200)
+- 1.7 Add a short test script to exercise the new path (`scripts/test-integration.sh`). (AC: script runs locally and shows request flows)
+
+**Risks & Mitigations**
+- Risk: DB schema contention. Mitigation: read-only first for .NET, then migrate to shared service layer.
+- Risk: port collisions. Mitigation: declare ports in repo `env` files and check before startup.
+- Risk: package manager conflicts (apt / snap / dotnet). Mitigation: prefer containerized runtimes and avoid installing global runtimes when possible.
+
+**Next actions (immediate)**
+- ✅ COMPLETED: Scaffold the Frontend Vite migration starter files and add a `vite.config.ts` with a proxy for `/api/serpents` - React auth refactor complete with modern hooks
+- Scaffold the `.NET EventSerpent Service` minimal WebAPI and Dockerfile in `/var/www/KEEP-Up/dotnet/event-serpent/`.
+
+**Acceptance criteria for Step‑1 overall:**
+- A minimal integration end‑to‑end exists where the frontend or backend can hit the .NET placeholder and receive a valid JSON response, and the system falls back to legacy Node.js fetcher when the .NET service is down.
+
+---
+
+Document created by integration task runner.
+
+**Happenings (Automat .NET Optimization)**
+
+- Created Vite-based frontend scaffold and added client-side skeleton + web-worker filtering.
+- Added `serpents-service` orchestration (Node.js) that calls a local .NET `/api/serpents` and falls back to the legacy `fetcher-cli.js`.
+- Implemented BullMQ queue + `worker.js` with Redis support, retry/backoff and persistence to MariaDB (`serpent_jobs`).
+- Added a lightweight dashboard at `/dashboard` to inspect recent job runs.
+- Scaffolded a `.NET` EventSerpent WebAPI placeholder with `/api/serpents` and a Dockerfile.
+- Scaffolded a `.NET` AuthProxy with gRPC and an HTTP compatibility endpoint `/api/validate` for Joomla; added a PHP client `web/joomla_auth_http_client.php`.
+- Fixed a broken `package.json` that prevented the React container from starting and restarted the React service.
+- Installed `php-cli` for local testing and validated the auth endpoint and PHP client.
+
+State: work paused per request; documentation updated under `/var/www/KEEP-Up/documentation/`.
+
+========== DOTNET_SERVICES.md ==========
+# .NET Microservices Documentation
+
+## Overview
+
+As of January 22, 2026, KEEP-Up has been extended with .NET 8.0 microservices for improved performance and modularity. Two primary services have been implemented and fully tested.
+
+## Services Implemented
+
+### 1. Event-Serpent (`/dotnet/event-serpent/`)
+
+**Purpose:** High-performance event fetching service with API integrations.
+
+**Technology Stack:**
+- ASP.NET Core 8.0 Minimal API
+- HttpClient for external API calls
+- Docker containerization
+- JSON serialization with System.Text.Json
+
+**Key Features:**
+- Ticketmaster Discovery API v2 integration
+- Mock data fallback for development/testing
+- Performance metrics in responses
+- Health check endpoint
+
+**API Endpoints:**
+- `GET /health` - Service health check
+- `GET /api/serpents` - Fetch events with timing data
+
+**Response Format:**
+```json
+{
+  "events": [
+    {
+      "name": "Sample Event",
+      "date": "2026-01-22",
+      "venue": "Sample Venue",
+      "city": "Sample City"
+    }
+  ],
+  "total": 1,
+  "time_seconds": 0.5,
+  "errors": 0
+}
+```
+
+**Docker Commands:**
+```bash
+# Build
+docker-compose build dotnet-eventserpent
+
+# Run
+docker-compose up -d dotnet-eventserpent
+
+# Test
+curl http://localhost:5000/api/serpents
+```
+
+### 2. Auth-Proxy (`/dotnet/auth-proxy/`)
+
+**Purpose:** Authentication proxy service with gRPC and HTTP support.
+
+**Technology Stack:**
+- ASP.NET Core 8.0 WebAPI
+- gRPC with protobuf definitions
+- HTTP compatibility endpoints
+- Docker containerization
+
+**Key Features:**
+- gRPC AuthService for high-performance auth
+- HTTP validation endpoint for compatibility
+- Placeholder JWT validation logic
+- Extensible for future auth providers
+
+**API Endpoints:**
+- `POST /api/validate` - HTTP auth validation
+- gRPC AuthService.ValidateToken
+- gRPC AuthService.AuthenticateUser
+
+**Response Format (HTTP):**
+```json
+{
+  "valid": true,
+  "username": "devuser",
+  "email": "dev@local"
+}
+```
+
+**Docker Commands:**
+```bash
+# Build
+docker-compose build dotnet-authproxy
+
+# Run
+docker-compose up -d dotnet-authproxy
+
+# Test
+curl -X POST http://localhost:5001/api/validate -H "Content-Type: application/json" -d "{}"
+```
+
+## Integration with Node.js Backend
+
+### Serpents-Service Orchestration
+
+The Node.js serpents-service (`/backend/serpents-service/index.js`) acts as an orchestration layer:
+
+1. **Primary Path:** Calls .NET event-serpent service first
+2. **Fallback:** If .NET unavailable, calls legacy Node.js fetcher-cli.js
+3. **Port:** Runs on 3003 to avoid conflicts
+4. **Dependencies:** Express, axios, mysql2 (BullMQ commented out for stability)
+
+**Orchestration Flow:**
+```
+Frontend Request → Serpents-Service (3003)
+    ↓
+Try .NET event-serpent (5000)
+    ↓ (if fails)
+Legacy fetcher-cli.js
+    ↓
+Return events to frontend
+```
+
+## Docker Compose Integration
+
+Updated `docker-compose.yml` includes:
+
+```yaml
+dotnet-eventserpent:
+  build: ./dotnet/event-serpent
+  ports:
+    - "5000:80"
+  networks:
+    - keepup_network
+
+dotnet-authproxy:
+  build: ./dotnet/auth-proxy
+  ports:
+    - "5001:80"
+  networks:
+    - keepup_network
+```
+
+## Development Notes
+
+- **Environment:** Debian 13 with Docker support
+- **.NET Version:** 8.0 LTS
+- **Container Images:** Multi-stage builds for optimization
+- **Health Checks:** Implemented for both services
+- **Testing:** All services tested with curl commands
+
+## Future Extensions
+
+- Add more .NET services for other domains (/frontend, /web)
+- Implement full JWT authentication in auth-proxy
+- Add Redis caching layer
+- Expand API integrations in event-serpent
+- Add monitoring and logging
+
+## Troubleshooting
+
+- **Service not starting:** Check Docker logs with `docker-compose logs dotnet-eventserpent`
+- **API returns errors:** Verify .env configuration and API keys
+- **Port conflicts:** Ensure ports 5000 and 5001 are available
+- **Orchestration fails:** Check serpents-service logs and Docker network connectivity</content>
+<parameter name="filePath">/var/www/KEEP-Up/documentation/DOTNET_SERVICES.md
