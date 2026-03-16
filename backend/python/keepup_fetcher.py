@@ -572,76 +572,101 @@ async def fetch_sympla_api(session: aiohttp.ClientSession,
         return []
 
 
+def bandsintown_city_slug(city_name: str, country: str = 'Brazil') -> str:
+    """Porto Alegre + Brazil → porto-alegre-brazil"""
+    import unicodedata as _ud
+    def _s(t):
+        n = _ud.normalize('NFD', t)
+        return ''.join(c for c in n if _ud.category(c) != 'Mn').lower().replace(' ', '-').replace(',','').replace('.','')
+    return f'{_s(city_name)}-{_s(country)}'
+
+
 async def fetch_bandsintown(session: aiohttp.ClientSession,
                             lat: float, lon: float,
-                            radius_km: float) -> List[Dict]:
+                            radius_km: float,
+                            city_name: str = '',
+                            country: str = 'Brazil') -> List[Dict]:
     """
-    Query Bandsintown for all artists in the DB (from artist_seed.py).
-    Falls back to a minimal hardcoded list if DB table not ready.
+    Scrapes Bandsintown city page and extracts MusicEvent JSON-LD.
+    36+ events per city, no API key needed, structured data.
+    URL: https://www.bandsintown.com/c/{city-slug}-{country-slug}
     """
-    artists = load_artists_from_db_sync()
-    if not artists:
-        artists = ['Coldplay', 'Anitta', 'Alok', 'Iron Maiden', 'The Weeknd',
-                   'Ed Sheeran', 'Dua Lipa', 'Billie Eilish', 'Bruno Mars']
-        log.warning("  Bandsintown: artists table empty, using fallback list")
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        log.warning("  Bandsintown: playwright not installed (pip install playwright)")
+        return []
 
-    all_events: List[Dict] = []
+    slug = bandsintown_city_slug(city_name, country)
+    url  = f'https://www.bandsintown.com/c/{slug}'
 
-    async def _check(artist: str) -> List[Dict]:
-        try:
-            from urllib.parse import quote_plus
-            url = f'https://rest.bandsintown.com/artists/{quote_plus(artist)}/events?app_id=keepup-app'
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                if resp.status != 200:
-                    return []
-                data = await resp.json(content_type=None)
-                if not isinstance(data, list):
-                    return []
-                events = []
-                for ev in data:
-                    v = ev.get('venue', {})
-                    vlat = v.get('latitude')
-                    vlon = v.get('longitude')
-                    try:
-                        vlat = float(vlat) if vlat else None
-                        vlon = float(vlon) if vlon else None
-                    except (ValueError, TypeError):
-                        vlat, vlon = None, None
-                    # Filter by radius
-                    if vlat and vlon:
-                        dist = haversine_km(lat, lon, vlat, vlon)
-                        if dist > radius_km:
-                            continue
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                user_agent=UA,
+                locale='en-US',
+            )
+            page = await context.new_page()
+            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+            await page.wait_for_timeout(5000)
+            html = await page.content()
+            await browser.close()
+
+        # Extract MusicEvent JSON-LD blocks
+        ld_blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
+        events = []
+        seen: Set[str] = set()
+
+        for block in ld_blocks:
+            try:
+                data = json.loads(block)
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    if item.get('@type') != 'MusicEvent':
+                        continue
+
+                    ev_url = item.get('url', '')
+                    ev_id  = re.search(r'/e/(\d+)', ev_url)
+                    key    = f"bit_{ev_id.group(1) if ev_id else abs(hash(ev_url))}"
+                    if key in seen:
+                        continue
+                    seen.add(key)
+
+                    loc     = item.get('location', {})
+                    geo     = loc.get('geo', {})
+                    v_lat   = float(geo['latitude'])  if geo.get('latitude')  else lat
+                    v_lon   = float(geo['longitude']) if geo.get('longitude') else lon
+                    artist  = (item.get('performer') or {}).get('name', '') or item.get('name', '')
+                    # Strip " @ Venue" from name if present
+                    name    = item.get('name', '')
+                    if ' @ ' in name:
+                        artist = name.split(' @ ')[0].strip()
+                        name   = artist
+
                     events.append({
-                        'name':      ev.get('title') or f'{artist} Live',
-                        'artist':    artist,
-                        'date':      (ev.get('datetime') or '')[:19],
-                        'venue':     v.get('name', ''),
-                        'category':  'Concert',
-                        'description': '',
-                        'url':       ev.get('url', ''),
-                        'latitude':  vlat or lat,
-                        'longitude': vlon or lon,
-                        'source':    'bandsintown',
-                        'event_key': f"bit_{artist[:20]}_{ev.get('id','')}",
+                        'name':        name[:200],
+                        'artist':      artist[:200],
+                        'date':        (item.get('startDate') or '')[:19],
+                        'venue':       loc.get('name', '')[:200],
+                        'category':    'Concert',
+                        'description': (item.get('description') or '')[:300],
+                        'url':         ev_url,
+                        'image_url':   item.get('image', ''),
+                        'latitude':    v_lat,
+                        'longitude':   v_lon,
+                        'source':      'bandsintown',
+                        'event_key':   key,
                     })
-                return events
-        except Exception:
-            return []
+            except (json.JSONDecodeError, TypeError, KeyError):
+                continue
 
-    # Batch parallel requests (max 20 at a time)
-    BATCH = 20
-    for i in range(0, len(artists), BATCH):
-        batch = artists[i:i+BATCH]
-        results = await asyncio.gather(*[_check(a) for a in batch], return_exceptions=True)
-        for r in results:
-            if isinstance(r, list):
-                all_events.extend(r)
-        await asyncio.sleep(0.5)
+        log.info(f"  Bandsintown: {len(events)} events for {city_name}")
+        return events
 
-    log.info(f"  Bandsintown: {len(all_events)} events ({len(artists)} artists checked)")
-    return all_events
-
+    except Exception as e:
+        log.warning(f"  Bandsintown error ({city_name}): {e}")
+        return []
 
 async def fetch_viagogo_api(session: aiohttp.ClientSession,
                             lat: float, lon: float,
@@ -708,61 +733,121 @@ async def fetch_viagogo_api(session: aiohttp.ClientSession,
         return []
 
 
+# Viagogo country code map (ISO2 → Viagogo URL prefix)
+VIAGOGO_COUNTRY_MAP = {
+    'BR': 'br', 'US': 'us', 'GB': 'gb', 'DE': 'de', 'FR': 'fr',
+    'ES': 'es', 'IT': 'it', 'AR': 'ar', 'MX': 'mx', 'CL': 'cl',
+    'CO': 'co', 'PE': 'pe', 'UY': 'uy', 'PY': 'py', 'BO': 'bo',
+    'AU': 'au', 'NZ': 'nz', 'CA': 'ca', 'JP': 'jp', 'KR': 'kr',
+    'NL': 'nl', 'BE': 'be', 'PT': 'pt', 'CH': 'ch', 'AT': 'at',
+    'SE': 'se', 'NO': 'no', 'DK': 'dk', 'FI': 'fi', 'PL': 'pl',
+    'ZA': 'za', 'NG': 'ng', 'IN': 'in', 'SG': 'sg', 'HK': 'hk',
+}
+
+# Portuguese month names for date parsing
+VIAGOGO_MONTHS_PT = {
+    'jan': 1, 'fev': 2, 'mar': 3, 'abr': 4, 'mai': 5, 'jun': 6,
+    'jul': 7, 'ago': 8, 'set': 9, 'out': 10, 'nov': 11, 'dez': 12,
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+}
+
+
+def viagogo_city_url(city_name: str, country_code: str = 'BR') -> str:
+    """
+    Build Viagogo city URL from city name and country code.
+    Porto Alegre + BR → https://www.viagogo.com/br/Porto-Alegre
+    Buenos Aires + AR → https://www.viagogo.com/ar/Buenos-Aires
+    """
+    vg_cc = VIAGOGO_COUNTRY_MAP.get(country_code.upper(), 'br')
+    # Normalize: remove accents, title case, replace spaces with hyphens
+    import unicodedata as _ud
+    nfkd = _ud.normalize('NFD', city_name)
+    no_acc = ''.join(c for c in nfkd if _ud.category(c) != 'Mn')
+    city_slug = no_acc.title().replace(' ', '-')
+    return f'https://www.viagogo.com/{vg_cc}/{city_slug}'
+
+
+def parse_viagogo_date(day_month: str, time_str: str, year: int = None) -> str:
+    """Parse Viagogo date like '01 abr' + '19:00' → ISO datetime."""
+    if not day_month:
+        return ''
+    parts = day_month.strip().split()
+    if len(parts) < 2:
+        return ''
+    try:
+        day = int(parts[0])
+        mon = VIAGOGO_MONTHS_PT.get(parts[1].lower()[:3], 0)
+        if not mon:
+            return ''
+        if year is None:
+            year = datetime.now().year
+            if mon < datetime.now().month:
+                year += 1
+        if time_str:
+            return f'{year}-{mon:02d}-{day:02d}T{time_str}:00'
+        return f'{year}-{mon:02d}-{day:02d}'
+    except (ValueError, IndexError):
+        return ''
+
+
 async def fetch_viagogo_scraper(session: aiohttp.ClientSession,
                                 city_name: str,
-                                lat: float, lon: float) -> List[Dict]:
-    if not BS4:
-        return []
-    url = f'https://www.viagogo.com/br/secure/Search?q={norm(city_name, "+")}'
+                                lat: float, lon: float,
+                                country_code: str = 'BR') -> List[Dict]:
+    """
+    Uses Viagogo's internal getExploreEvents JSON endpoint.
+    No scraping needed — returns structured JSON directly.
+    URL pattern: https://www.viagogo.com/{cc}/{City-Name}?method=getExploreEvents
+    """
+    url = f'{viagogo_city_url(city_name, country_code)}?method=getExploreEvents'
+    headers = {
+        'User-Agent': UA,
+        'Accept': 'application/json',
+        'Referer': viagogo_city_url(city_name, country_code),
+    }
     try:
-        async with session.get(url,
-                               headers={'User-Agent': UA, 'Accept-Language': 'pt-BR,pt;q=0.9'},
-                               timeout=aiohttp.ClientTimeout(total=20),
+        async with session.get(url, headers=headers,
+                               timeout=aiohttp.ClientTimeout(total=15),
                                allow_redirects=True) as resp:
             if resp.status != 200:
+                log.debug(f"  Viagogo: HTTP {resp.status} for {city_name}")
                 return []
-            html = await resp.text()
-            soup = BeautifulSoup(html, 'html.parser')
+            data = await resp.json(content_type=None)
+            raw_events = data.get('events', [])
+            if not raw_events:
+                return []
+
             events = []
-            seen: Set[str] = set()
-            for link in soup.find_all('a', href=True):
-                href = link['href']
-                if '/E-' not in href:
+            for ev in raw_events:
+                if ev.get('isParkingEvent'):
                     continue
-                text = link.get_text(' ', strip=True)
-                if not text or len(text) < 10 or text.strip().lower() in ('ver ingressos', 'see tickets'):
-                    continue
-                eid_m = re.search(r'/E-(\d+)', href)
-                key = f"vgscrape_{eid_m.group(1) if eid_m else abs(hash(href))}"
-                if key in seen:
-                    continue
-                seen.add(key)
-                parsed = parse_pt_date(text)
-                if not parsed:
-                    continue
-                ev_date, artist, venue, _ = parsed
-                artist = re.sub(r'\s*(Ver ingressos|See tickets|Tickets|Buy).*$', '', artist, flags=re.IGNORECASE).strip()
-                if not artist or len(artist) < 2:
-                    continue
-                full_url = f'https://www.viagogo.com{href}' if href.startswith('/') else href
+                ev_id = ev.get('eventId')
+                key = f"viagogo_{ev_id}"
+                ev_date = parse_viagogo_date(
+                    ev.get('formattedDateWithoutYear', ''),
+                    ev.get('formattedTime', '')
+                )
                 events.append({
-                    'name':      artist,
-                    'artist':    artist,
-                    'date':      ev_date[:10] if ev_date else 'TBA',
-                    'venue':     venue,
+                    'name':      (ev.get('name') or '')[:200],
+                    'artist':    (ev.get('name') or '')[:200],
+                    'date':      ev_date,
+                    'venue':     (ev.get('venueName') or '')[:200],
                     'category':  'Concert',
                     'description': '',
-                    'url':       full_url,
-                    'latitude':  lat, 'longitude': lon,
-                    'source':    'viagogo_scraper',
+                    'url':       ev.get('url', ''),
+                    'image_url': ev.get('imageUrl', ''),
+                    'latitude':  lat,
+                    'longitude': lon,
+                    'source':    'viagogo',
                     'event_key': key,
                 })
-            log.info(f"  Viagogo scraper: {len(events)} events")
+
+            log.info(f"  Viagogo: {len(events)} events for {city_name}")
             return events
     except Exception as e:
-        log.warning(f"  Viagogo scraper error: {e}")
+        log.warning(f"  Viagogo error ({city_name}): {e}")
         return []
-
 
 SYMPLA_STATE_MAP = {
     'Porto Alegre': 'RS', 'Caxias do Sul': 'RS', 'Pelotas': 'RS', 'Santa Maria': 'RS',
@@ -864,12 +949,112 @@ async def fetch_sympla_scraper(session: aiohttp.ClientSession,
         return []
 
 
+def eventbrite_city_slug(city_name: str, country: str = 'Brazil') -> str:
+    """
+    Build Eventbrite city slug.
+    Porto Alegre, Brazil → brazil--porto-alegre
+    Buenos Aires, Argentina → argentina--buenos-aires
+    """
+    import unicodedata as _ud
+    def _s(t):
+        n = _ud.normalize('NFD', t)
+        return ''.join(c for c in n if _ud.category(c) != 'Mn').lower().replace(' ', '-')
+    return f'{_s(country)}--{_s(city_name)}'
+
+
 async def fetch_eventbrite(session: aiohttp.ClientSession,
                            city_name: str,
-                           lat: float, lon: float) -> List[Dict]:
-    if not BS4:
+                           lat: float, lon: float,
+                           country: str = 'Brazil') -> List[Dict]:
+    """
+    Uses Eventbrite internal city-browse API.
+    Returns structured event data with images, no auth needed.
+    URL: /api/v3/destination/city-browse/ with slug=country--city
+    """
+    slug = eventbrite_city_slug(city_name, country)
+    headers = {
+        'User-Agent': UA,
+        'Accept': 'application/json',
+        'Referer': f'https://www.eventbrite.com.br/d/{slug}/events/',
+    }
+    api_url = 'https://www.eventbrite.com.br/api/v3/destination/city-browse/'
+    params  = {'slug': slug, 'page_size': 50}
+
+    try:
+        events = []
+        seen: Set[str] = set()
+
+        async with session.get(api_url, params=params, headers=headers,
+                               timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            if resp.status != 200:
+                log.debug(f"  Eventbrite: HTTP {resp.status} for {city_name}")
+                # Fallback: try JSON-LD from HTML page
+                return await _fetch_eventbrite_jsonld(session, slug, city_name, lat, lon)
+            data = await resp.json(content_type=None)
+
+        # city-browse returns buckets of events
+        for bucket in (data.get('buckets') or []):
+            for ev in (bucket.get('events') or []):
+                ev_id = ev.get('id') or ev.get('event_id')
+                if not ev_id:
+                    continue
+                key = f"eb_{ev_id}"
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                img   = ev.get('image') or {}
+                img_url = (img.get('url') or
+                           (img.get('image_sizes') or {}).get('medium') or '')
+                name  = (ev.get('name') or ev.get('title') or '')[:200]
+                start = (ev.get('start_date') or ev.get('start') or
+                         (ev.get('date') or {}).get('start') or '')
+                if hasattr(start, 'get'):
+                    start = start.get('utc', '') or start.get('local', '')
+
+                venue = ev.get('venue') or {}
+                if isinstance(venue, str):
+                    venue_name = venue
+                    v_lat, v_lon = lat, lon
+                else:
+                    venue_name = venue.get('name', '')
+                    try:
+                        v_lat = float(venue.get('latitude', lat) or lat)
+                        v_lon = float(venue.get('longitude', lon) or lon)
+                    except (ValueError, TypeError):
+                        v_lat, v_lon = lat, lon
+
+                ev_url = (ev.get('url') or
+                          f'https://www.eventbrite.com.br/e/{ev_id}')
+
+                events.append({
+                    'name':        name,
+                    'artist':      name,
+                    'date':        str(start)[:19],
+                    'venue':       str(venue_name)[:200],
+                    'category':    (bucket.get('name') or 'Event')[:100],
+                    'description': (ev.get('summary') or ev.get('description') or '')[:300],
+                    'url':         ev_url,
+                    'image_url':   img_url,
+                    'latitude':    v_lat,
+                    'longitude':   v_lon,
+                    'source':      'eventbrite',
+                    'event_key':   key,
+                })
+
+        log.info(f"  Eventbrite: {len(events)} events for {city_name}")
+        return events
+
+    except Exception as e:
+        log.warning(f"  Eventbrite error ({city_name}): {e}")
         return []
-    url = f'https://www.eventbrite.com.br/d/{norm(city_name)}/events/'
+
+
+async def _fetch_eventbrite_jsonld(session: aiohttp.ClientSession,
+                                   slug: str, city_name: str,
+                                   lat: float, lon: float) -> List[Dict]:
+    """Fallback: parse JSON-LD from Eventbrite HTML page."""
+    url = f'https://www.eventbrite.com.br/d/{slug}/events/'
     try:
         async with session.get(url,
                                headers={'User-Agent': UA, 'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8'},
@@ -878,44 +1063,51 @@ async def fetch_eventbrite(session: aiohttp.ClientSession,
             if resp.status != 200:
                 return []
             html = await resp.text()
-            soup = BeautifulSoup(html, 'html.parser')
-            events = []
-            seen: Set[str] = set()
-            # JSON-LD first
-            for script in soup.find_all('script', type='application/ld+json'):
-                try:
-                    ld = json.loads(script.string or '{}')
-                    items = ld if isinstance(ld, list) else [ld]
-                    for item in items:
-                        if item.get('@type') != 'Event':
-                            continue
-                        name = item.get('name', '')
-                        if not name or name in seen:
-                            continue
-                        seen.add(name)
-                        loc = item.get('location', {})
-                        geo = loc.get('geo', {})
-                        addr = loc.get('address', {})
-                        events.append({
-                            'name': name[:200], 'artist': name[:200],
-                            'date': (item.get('startDate') or '')[:10],
-                            'venue': loc.get('name', ''),
-                            'category': 'Event',
-                            'description': (item.get('description') or '')[:300],
-                            'url': item.get('url', ''),
-                            'latitude':  float(geo['latitude'])  if geo.get('latitude')  else lat,
-                            'longitude': float(geo['longitude']) if geo.get('longitude') else lon,
-                            'source': 'eventbrite',
-                            'event_key': f"eb_{abs(hash(name))}",
-                        })
-                except (json.JSONDecodeError, TypeError):
-                    continue
-            log.info(f"  Eventbrite: {len(events)} events")
-            return events
-    except Exception as e:
-        log.warning(f"  Eventbrite error: {e}")
-        return []
 
+        events = []
+        seen: Set[str] = set()
+        ld_blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
+
+        for block in ld_blocks:
+            try:
+                data = json.loads(block)
+                items_list = data if isinstance(data, list) else [data]
+                # Handle ItemList wrapper
+                for wrapper in items_list:
+                    if wrapper.get('@type') == 'ItemList':
+                        items_list = [i.get('item', i) for i in wrapper.get('mainEntity', [])]
+                        break
+                for item in items_list:
+                    if item.get('@type') not in ('Event', 'MusicEvent'):
+                        continue
+                    name = item.get('name', '')
+                    if not name or name in seen:
+                        continue
+                    seen.add(name)
+                    loc = item.get('location', {})
+                    geo = loc.get('geo', {})
+                    events.append({
+                        'name':        name[:200],
+                        'artist':      name[:200],
+                        'date':        (item.get('startDate') or '')[:10],
+                        'venue':       loc.get('name', '')[:200],
+                        'category':    'Event',
+                        'description': (item.get('description') or '')[:300],
+                        'url':         item.get('url', ''),
+                        'image_url':   item.get('image', ''),
+                        'latitude':    float(geo['latitude'])  if geo.get('latitude')  else lat,
+                        'longitude':   float(geo['longitude']) if geo.get('longitude') else lon,
+                        'source':      'eventbrite',
+                        'event_key':   f"eb_{abs(hash(name))}",
+                    })
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+        log.info(f"  Eventbrite (JSON-LD fallback): {len(events)} events")
+        return events
+    except Exception as e:
+        log.warning(f"  Eventbrite JSON-LD error: {e}")
+        return []
 
 async def fetch_ai(session: aiohttp.ClientSession,
                    city_name: str, country: str,
