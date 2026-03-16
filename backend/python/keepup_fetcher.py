@@ -67,11 +67,15 @@ TICKETMASTER_KEY    = os.getenv('TICKETMASTER_API_KEY', '')
 SYMPLA_TOKEN        = os.getenv('SYMPLA_APP_TOKEN', '') or os.getenv('SYMPLA_API_TOKEN', '')
 DEEPSEEK_KEY        = os.getenv('DEEPSEEK_API_KEY', '')
 OPENROUTER_KEY      = os.getenv('OPENROUTER_API_KEY', '')
+GEMINI_KEY          = os.getenv('GEMINI_API_KEY', '')
+MISTRAL_KEY         = os.getenv('MISTRAL_API_KEY', '')
 VIAGOGO_CLIENT_ID   = os.getenv('VIAGOGO_CLIENT_ID', '')
 VIAGOGO_CLIENT_SEC  = os.getenv('VIAGOGO_CLIENT_SECRET', '')
 
 DEEPSEEK_URL    = "https://api.deepseek.com/v1/chat/completions"
 OPENROUTER_URL  = "https://openrouter.ai/api/v1/chat/completions"
+GEMINI_URL      = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+MISTRAL_URL     = "https://api.mistral.ai/v1/chat/completions"
 OR_HEADERS      = {"HTTP-Referer": "https://app.keepup.lat", "X-Title": "KEEPUP"}
 
 FREE_MODELS = [
@@ -1113,7 +1117,7 @@ async def fetch_ai(session: aiohttp.ClientSession,
                    city_name: str, country: str,
                    lat: float, lon: float) -> List[Dict]:
     """Run DeepSeek + free OpenRouter models in parallel, each with a different angle."""
-    if not DEEPSEEK_KEY and not OPENROUTER_KEY:
+    if not DEEPSEEK_KEY and not OPENROUTER_KEY and not GEMINI_KEY and not MISTRAL_KEY:        
         return []
 
     def _prompt(focus=''):
@@ -1162,7 +1166,6 @@ Return ONLY a JSON array. No markdown.
                 return events
         except Exception:
             return []
-
     tasks = []
     angles = ['', 'music and concerts', 'theater arts cultural sports']
     if DEEPSEEK_KEY:
@@ -1174,11 +1177,61 @@ Return ONLY a JSON array. No markdown.
             tag = model.split('/')[1].split(':')[0]
             tasks.append(_call(OPENROUTER_URL, OPENROUTER_KEY, model,
                                _prompt(angles[i % len(angles)]), tag, OR_HEADERS))
-
+    if MISTRAL_KEY:
+        tasks.append(_call(MISTRAL_URL, MISTRAL_KEY, 'mistral-small-latest',
+                           _prompt('music and concerts'), 'mistral'))
+    if GEMINI_KEY:
+        tasks.append(_call_gemini(_prompt(''), lat, lon, city_name, country))
+    if not tasks:
+        return []
     results = await asyncio.gather(*tasks, return_exceptions=True)
     events = [e for r in results if isinstance(r, list) for e in r]
     log.info(f"  AI: {len(events)} events")
     return events
+
+
+async def _call_gemini(session_unused, prompt: str,
+                       lat: float, lon: float,
+                       city_name: str, country: str) -> List[Dict]:
+    """Gemini uses a different API format — key in URL, not Bearer."""
+    if not GEMINI_KEY:
+        return []
+    try:
+        url = f"{GEMINI_URL}?key={GEMINI_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.5, "maxOutputTokens": 2000}
+        }
+        async with aiohttp.ClientSession() as s:
+            async with s.post(url, json=payload,
+                              timeout=aiohttp.ClientTimeout(total=45)) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+                content = data['candidates'][0]['content']['parts'][0]['text']
+                m = re.search(r'\[[\s\S]*\]', content)
+                if not m:
+                    return []
+                raw = json.loads(m.group())
+                events = []
+                for e in raw:
+                    if not isinstance(e, dict) or not e.get('name'):
+                        continue
+                    events.append({
+                        'name':        e.get('name','')[:200],
+                        'artist':      e.get('artist','')[:200],
+                        'date':        e.get('date',''),
+                        'venue':       e.get('venue',''),
+                        'category':    e.get('category','Event'),
+                        'description': e.get('description','')[:500],
+                        'url':         e.get('url',''),
+                        'latitude':    lat, 'longitude': lon,
+                        'source':      'ai_gemini',
+                        'event_key':   f"ai_gemini_{abs(hash(e.get('name','')))}",
+                    })
+                return events
+    except Exception:
+        return []
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1304,29 +1357,64 @@ async def run_fetcher(city_name: str,
             'max_radius_km': max_km,
             'total_saved': total_saved,
         }
-
-
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # CLI
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+# Default continent starting cities — runs forever when no --city given
+CONTINENT_CITIES = [
+    ('São Paulo',       'Brazil',           'BR'),
+    ('New York',        'United States',    'US'),
+    ('London',          'United Kingdom',   'GB'),
+    ('Lagos',           'Nigeria',          'NG'),
+    ('Tokyo',           'Japan',            'JP'),
+    ('Sydney',          'Australia',        'AU'),
+]
+
+async def run_forever(sources=None, step_km=DEFAULT_STEP_KM):
+    """
+    Default mode: sweeps all 6 continent cities in parallel, loops forever.
+    """
+    log.info("🌍 KEEPUP FETCHER — Daemon mode, sweeping all continents forever...")
+    cycle = 0
+    while True:
+        cycle += 1
+        log.info(f"\n🔄 Cycle #{cycle} — launching {len(CONTINENT_CITIES)} continents in parallel")
+        tasks = [
+            run_fetcher(city_name=city, country=country, step_km=step_km,
+                       max_km=10_000, sources=sources)
+            for city, country, cc in CONTINENT_CITIES
+        ]
+        await asyncio.gather(*tasks, return_exceptions=True)
+        log.info(f"✅ Cycle #{cycle} complete — sleeping 1h before next cycle")
+        await asyncio.sleep(3600)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='🐍🦅 KEEPUP Fetcher — Radar Sweeper')
-    parser.add_argument('--city',       required=True, help='Starting city name')
+    parser.add_argument('--city',       default=None, help='City to sweep (optional — runs all continents if omitted)')
+    parser.add_argument('--country',    default='Brazil', help='Country name (default: Brazil)')
     parser.add_argument('--step',       type=float, default=DEFAULT_STEP_KM,
                         help=f'Ring step in km (default: {DEFAULT_STEP_KM})')
     parser.add_argument('--max-radius', type=float, default=DEFAULT_MAX_KM,
                         help=f'Max sweep radius in km (default: {DEFAULT_MAX_KM})')
     parser.add_argument('--sources',    nargs='+', default=None,
-                        help='Sources to use (default: all). Options: '
-                             'ticketmaster sympla_api sympla_scraper bandsintown '
-                             'viagogo_api viagogo_scraper eventbrite ai')
+                        help='Sources: ticketmaster sympla_scraper bandsintown '
+                             'viagogo_scraper eventbrite ai')
     args = parser.parse_args()
 
-    result = asyncio.run(run_fetcher(
-        city_name=args.city,
-        step_km=args.step,
-        max_km=args.max_radius,
-        sources=args.sources,
-    ))
-    print(json.dumps(result, indent=2, default=str))
+    if args.city:
+        # Single city mode
+        result = asyncio.run(run_fetcher(
+            city_name=args.city,
+            step_km=args.step,
+            max_km=args.max_radius,
+            sources=args.sources,
+        ))
+        print(json.dumps(result, indent=2, default=str))
+    else:
+        # Daemon mode — all continents forever
+        asyncio.run(run_forever(
+            sources=args.sources,
+            step_km=args.step,
+        ))
