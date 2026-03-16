@@ -507,6 +507,13 @@ async def fetch_ticketmaster(session: aiohttp.ClientSession,
                 venue = ev.get('_embedded', {}).get('venues', [{}])[0]
                 vlat = venue.get('location', {}).get('latitude')
                 vlon = venue.get('location', {}).get('longitude')
+                # Pick best image: prefer 16_9 ratio, widest width
+                images = ev.get('images', [])
+                image_url = ''
+                if images:
+                    best = sorted(images, key=lambda i: i.get('width', 0), reverse=True)
+                    image_url = best[0].get('url', '')
+
                 events.append({
                     'name':        ev.get('name', ''),
                     'artist':      ev.get('name', ''),
@@ -515,6 +522,7 @@ async def fetch_ticketmaster(session: aiohttp.ClientSession,
                     'category':    (ev.get('classifications') or [{}])[0].get('segment', {}).get('name', 'Event'),
                     'description': ev.get('info', ''),
                     'url':         ev.get('url', ''),
+                    'image_url':   image_url,
                     'latitude':    float(vlat) if vlat else lat,
                     'longitude':   float(vlon) if vlon else lon,
                     'source':      'ticketmaster',
@@ -756,59 +764,103 @@ async def fetch_viagogo_scraper(session: aiohttp.ClientSession,
         return []
 
 
+SYMPLA_STATE_MAP = {
+    'Porto Alegre': 'RS', 'Caxias do Sul': 'RS', 'Pelotas': 'RS', 'Santa Maria': 'RS',
+    'São Paulo': 'SP', 'Campinas': 'SP', 'Santos': 'SP', 'São Bernardo do Campo': 'SP',
+    'Rio de Janeiro': 'RJ', 'Niterói': 'RJ', 'Nova Iguaçu': 'RJ',
+    'Belo Horizonte': 'MG', 'Uberlândia': 'MG', 'Contagem': 'MG',
+    'Salvador': 'BA', 'Feira de Santana': 'BA',
+    'Fortaleza': 'CE', 'Curitiba': 'PR', 'Londrina': 'PR',
+    'Manaus': 'AM', 'Belém': 'PA', 'Recife': 'PE', 'Maceió': 'AL',
+    'Natal': 'RN', 'Goiânia': 'GO', 'Brasília': 'DF',
+    'Florianópolis': 'SC', 'Joinville': 'SC', 'Vitória': 'ES',
+}
+
+
 async def fetch_sympla_scraper(session: aiohttp.ClientSession,
                                city_name: str,
                                lat: float, lon: float) -> List[Dict]:
-    if not BS4:
-        return []
-    url = f'https://www.sympla.com.br/eventos/{norm(city_name)}'
+    """Uses Sympla internal discovery-bff API. No Playwright needed. Paginates all results."""
+    state = SYMPLA_STATE_MAP.get(city_name, '')
+    slug = f'{norm(city_name)}-{state.lower()}' if state else norm(city_name)
+    headers = {
+        'User-Agent': UA,
+        'Accept': 'application/json',
+        'Referer': f'https://www.sympla.com.br/eventos/{slug}',
+    }
+    base_url = 'https://www.sympla.com.br/api/discovery-bff/search/category-type'
+    params = {
+        'service':    '/v4/search',
+        'has_banner': '1',
+        'only':       'name,start_date,end_date,images,location,id,url,organizer',
+        'sort':       'day-trending-score',
+        'type':       'normal',
+        'location':   city_name,
+        'limit':      '24',
+    }
+    if state:
+        params['state'] = state
+
     try:
-        async with session.get(url,
-                               headers={'User-Agent': UA, 'Accept-Language': 'pt-BR,pt;q=0.9'},
-                               timeout=aiohttp.ClientTimeout(total=15),
-                               allow_redirects=True) as resp:
-            if resp.status != 200:
-                return []
-            html = await resp.text()
-            soup = BeautifulSoup(html, 'html.parser')
-            events = []
-            seen: Set[str] = set()
-            for link in soup.find_all('a', href=True):
-                href = link['href']
-                if '/evento/' not in href:
-                    continue
-                title = link.get_text(' ', strip=True)
-                if not title or len(title) < 5:
-                    continue
-                id_m = re.search(r'/evento/([^/?]+)', href)
-                key = f"sympla_sc_{id_m.group(1) if id_m else abs(hash(href))}"
-                if key in seen:
-                    continue
-                seen.add(key)
-                full_url = href if href.startswith('http') else f'https://www.sympla.com.br{href}'
-                parent = link.find_parent(['div', 'li', 'article'])
-                event_date = ''
-                if parent:
-                    dt = parent.find(string=re.compile(
-                        r'\d{1,2}\s+(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)', re.IGNORECASE))
-                    if dt:
-                        dm = re.search(r'(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)',
-                                       dt.strip(), re.IGNORECASE)
-                        if dm:
-                            mn = MONTHS.get(dm.group(2).lower(), 1)
-                            yr = datetime.now().year + (1 if mn < datetime.now().month else 0)
-                            event_date = f'{yr}-{mn:02d}-{int(dm.group(1)):02d}'
-                events.append({
-                    'name': title[:200], 'artist': title[:200],
-                    'date': event_date, 'venue': '', 'category': 'Event',
-                    'description': '', 'url': full_url,
-                    'latitude': lat, 'longitude': lon,
-                    'source': 'sympla_scraper', 'event_key': key,
-                })
-            log.info(f"  Sympla scraper: {len(events)} events")
-            return events
+        events = []
+        seen: Set[str] = set()
+        page = 1
+
+        while True:
+            params['page'] = str(page)
+            async with session.get(base_url, params=params, headers=headers,
+                                   timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    break
+                data = await resp.json(content_type=None)
+                items = data.get('data', [])
+                if not items:
+                    break
+
+                for ev in items:
+                    ev_id = ev.get('id')
+                    key = f"sympla_{ev_id}"
+                    if key in seen:
+                        continue
+                    seen.add(key)
+
+                    loc = ev.get('location', {})
+                    v_lat = loc.get('lat', lat)
+                    v_lon = loc.get('lon', lon)
+                    try:
+                        v_lat = float(v_lat) if v_lat else lat
+                        v_lon = float(v_lon) if v_lon else lon
+                    except (ValueError, TypeError):
+                        v_lat, v_lon = lat, lon
+
+                    image_url = (ev.get('images') or {}).get('lg') or \
+                                (ev.get('images') or {}).get('original', '')
+                    artist = (ev.get('organizer') or {}).get('name', '') or ev.get('name', '')
+
+                    events.append({
+                        'name':      (ev.get('name') or '')[:200],
+                        'artist':    artist[:200],
+                        'date':      (ev.get('start_date') or '')[:19],
+                        'venue':     (loc.get('name') or '')[:200],
+                        'category':  'Event',
+                        'description': '',
+                        'url':       ev.get('url', ''),
+                        'image_url': image_url,
+                        'latitude':  v_lat,
+                        'longitude': v_lon,
+                        'source':    'sympla',
+                        'event_key': key,
+                    })
+
+                if len(items) < 24:
+                    break
+                page += 1
+                await asyncio.sleep(0.5)
+
+        log.info(f"  Sympla: {len(events)} events ({page} pages)")
+        return events
     except Exception as e:
-        log.warning(f"  Sympla scraper error: {e}")
+        log.warning(f"  Sympla error: {e}")
         return []
 
 
