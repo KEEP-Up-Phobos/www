@@ -1381,7 +1381,7 @@ async def run_forever(sources=None, step_km=DEFAULT_STEP_KM):
         cycle += 1
         log.info(f"\n🔄 Cycle #{cycle} — launching {len(CONTINENT_CITIES)} continents in parallel")
         tasks = [
-            run_fetcher(city_name=city, country=country, step_km=step_km,
+            run_fetcher(city_name=city, step_km=step_km,
                        max_km=10_000, sources=sources)
             for city, country, cc in CONTINENT_CITIES
         ]
