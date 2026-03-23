@@ -334,6 +334,26 @@
                 } catch (err) {
                     console.log('Not logged in or error loading profile');
                 }
+
+                // Fall back to browser geolocation when profile coordinates are not available
+                if ((!this.userProfile || !this.userProfile.lat || !this.userProfile.lng) && navigator.geolocation) {
+                    await new Promise((resolve) => {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                const lat = pos.coords.latitude;
+                                const lng = pos.coords.longitude;
+                                this.userProfile = this.userProfile || {};
+                                this.userProfile.lat = lat;
+                                this.userProfile.lng = lng;
+                                this.userProfile.location = this.userProfile.location || 'Current location';
+                                console.log('Geolocation fallback loaded:', this.userProfile);
+                                resolve();
+                            },
+                            () => resolve(),
+                            { timeout: 10000, enableHighAccuracy: true }
+                        );
+                    });
+                }
             }
 
             async loadEvents() {
@@ -405,6 +425,16 @@
                 }
             }
 
+            getEventCoords(event) {
+                const lat = event.latitude ?? event.venue_latitude ?? event.lat;
+                const lng = event.longitude ?? event.venue_longitude ?? event.lng;
+                if (lat == null || lng == null) return null;
+                const latNum = parseFloat(lat);
+                const lngNum = parseFloat(lng);
+                if (Number.isNaN(latNum) || Number.isNaN(lngNum)) return null;
+                return { lat: latNum, lng: lngNum };
+            }
+
             updateMapEvents() {
                 if (!this.map) return;
 
@@ -415,52 +445,45 @@
                 // Check if user is "testfriend" - they can see all events globally
                 const isTestFriend = this.userProfile && this.userProfile.username === 'testfriend';
 
-                if (isTestFriend) {
-                    // Show all events for testfriend
-                    this.events.forEach(event => {
-                        if (event.venue_latitude && event.venue_longitude) {
-                            const marker = L.circleMarker([event.venue_latitude, event.venue_longitude], {
-                                radius: 8,
-                                fillColor: '#ff6b6b',
-                                color: '#ff5252',
-                                weight: 2,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }).bindPopup(`<b>${event.event_name}</b><br>${event.artist_name}<br>${event.venue_name}<br><small>🌍 Global Test View</small>`).addTo(this.map);
-                            this.markers.push(marker);
-                        }
-                    });
-                    return;
-                }
+                const userLat = this.userProfile?.lat;
+                const userLng = this.userProfile?.lng;
 
-                // For regular users, filter by radius
-                if (!this.userProfile || !this.userProfile.lat || !this.userProfile.lng) {
-                    return;
-                }
-
-                const userLat = this.userProfile.lat;
-                const userLng = this.userProfile.lng;
+                const markersToAdd = [];
 
                 this.events.forEach(event => {
-                    if (event.venue_latitude && event.venue_longitude) {
-                        const distance = this.calculateDistance(
-                            userLat, userLng,
-                            event.venue_latitude, event.venue_longitude
-                        );
+                    const coords = this.getEventCoords(event);
+                    if (!coords) return;
 
-                        if (distance <= this.currentRadius) {
-                            const marker = L.circleMarker([event.venue_latitude, event.venue_longitude], {
-                                radius: 8,
-                                fillColor: '#00d4ff',
-                                color: '#0099ff',
-                                weight: 2,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }).bindPopup(`<b>${event.event_name}</b><br>${event.artist_name}<br>${event.venue_name}<br><small>📍 ${Math.round(distance)}km away</small>`).addTo(this.map);
-                            this.markers.push(marker);
-                        }
+                    const distance = (userLat != null && userLng != null)
+                        ? this.calculateDistance(userLat, userLng, coords.lat, coords.lng)
+                        : null;
+
+                    if (isTestFriend || (distance != null && distance <= this.currentRadius) || (userLat == null || userLng == null)) {
+                        const isFamily = isTestFriend;
+                        const color = isFamily ? '#ff6b6b' : '#00d4ff';
+                        const border = isFamily ? '#ff5252' : '#0099ff';
+
+                        const popupText = `<b>${event.event_name || event.title || 'Event'}</b><br>${event.artist_name || event.venue_name || ''}<br>${event.venue_name || event.location || ''}${distance != null ? `<br><small>📍 ${Math.round(distance)}km away</small>` : ''}${isFamily ? '<br><small>🌍 Global Test View</small>' : ''}`;
+
+                        const marker = L.circleMarker([coords.lat, coords.lng], {
+                            radius: 8,
+                            fillColor: color,
+                            color: border,
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).bindPopup(popupText).addTo(this.map);
+
+                        this.markers.push(marker);
+                        markersToAdd.push([coords.lat, coords.lng]);
                     }
                 });
+
+                // Fit map to markers when possible
+                if (markersToAdd.length > 0) {
+                    const bounds = L.latLngBounds(markersToAdd);
+                    this.map.fitBounds(bounds, { padding: [50, 50] });
+                }
             }
 
             calculateDistance(lat1, lng1, lat2, lng2) {

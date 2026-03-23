@@ -102,6 +102,7 @@ const EventMap: React.FC = () => {
   const [radius, setRadius] = useState(25); // km
   const [mapCenter, setMapCenter] = useState<[number, number]>([-30.0346, -51.2177]);
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // UI state
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -135,6 +136,20 @@ const EventMap: React.FC = () => {
   }, [venueGroups, userLoc]);
 
   /* ── Location init ── */
+  const getIpFallbackLocation = async () => {
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      if (!response.ok) throw new Error('ip lookup failed');
+      const data = await response.json();
+      if (data.latitude && data.longitude) {
+        return { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+      }
+    } catch (err) {
+      console.warn('IP location fallback failed:', err);
+    }
+    return { lat: -30.0346, lng: -51.2177 };
+  };
+
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
@@ -155,7 +170,8 @@ const EventMap: React.FC = () => {
           }
         } catch { /* continue to geolocation */ }
       }
-      // 2. Browser geolocation
+
+      // 2. Browser geolocation w/ IP fallback for mobile-denied geo
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -164,6 +180,7 @@ const EventMap: React.FC = () => {
             setUserLoc(loc);
             setMapCenter([loc.lat, loc.lng]);
             setFlyTarget([loc.lat, loc.lng]);
+            setLocationError(null);
             // Persist to backend
             if (token && user?.id) {
               userAPI.updateCurrentLocation(token, {
@@ -173,19 +190,30 @@ const EventMap: React.FC = () => {
               }).catch(() => {});
             }
           },
-          () => {
-            if (!cancelled) setUserLoc({ lat: -30.0346, lng: -51.2177 });
+          async (err) => {
+            console.warn('Geolocation failed:', err);
+            setLocationError('Geolocation not available or denied. Using fallback location.');
+            if (!cancelled) {
+              const fallback = await getIpFallbackLocation();
+              setUserLoc(fallback);
+              setMapCenter([fallback.lat, fallback.lng]);
+              setFlyTarget([fallback.lat, fallback.lng]);
+            }
           },
-          { timeout: 10000, enableHighAccuracy: true }
+          { timeout: 15000, enableHighAccuracy: true }
         );
       } else {
-        setUserLoc({ lat: -30.0346, lng: -51.2177 });
+        const fallback = await getIpFallbackLocation();
+        setLocationError('Geolocation not supported by this browser. Showing fallback location.');
+        setUserLoc(fallback);
+        setMapCenter([fallback.lat, fallback.lng]);
+        setFlyTarget([fallback.lat, fallback.lng]);
       }
     };
     init();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, user]);
 
   /* ── Fetch events when location or radius changes ── */
   useEffect(() => {
@@ -252,6 +280,11 @@ const EventMap: React.FC = () => {
             </>
           )}
         </div>
+        {locationError && (
+          <div style={{ color: '#FFBABA', background: '#5F2121', padding: '6px 12px', borderRadius: 8, marginTop: 8, fontSize: '0.75rem' }}>
+            ⚠️ {locationError}
+          </div>
+        )}
       </div>
 
       {/* ── Map container ── */}
