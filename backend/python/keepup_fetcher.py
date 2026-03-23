@@ -95,9 +95,10 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org"
 NOMINATIM_UA  = "KEEPUP-Fetcher/2.0 (contact@keepup.lat)"
 
 # ── Radar config ──────────────────────────────────────────────
-DEFAULT_STEP_KM = 50
-DEFAULT_MAX_KM  = 10_000
-RADAR_PAUSE_S   = 2.0
+DEFAULT_STEP_KM  = 100
+DEFAULT_MAX_KM   = 6_800
+RADAR_PAUSE_S    = 2.0
+SAVE_BATCH_SIZE  = 1000    # events per DB transaction
 
 # ── Browser UA ────────────────────────────────────────────────
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0'
@@ -130,6 +131,20 @@ SYMPLA_STATE_MAP = {
     'Manaus':'AM','Belém':'PA','Recife':'PE','Maceió':'AL',
     'Natal':'RN','Goiânia':'GO','Brasília':'DF',
     'Florianópolis':'SC','Joinville':'SC','Blumenau':'SC','Vitória':'ES',
+}
+
+# ── Bandsintown country map (ISO code → English slug) ────────
+BIT_COUNTRY = {
+    'BR':'brazil','US':'united-states','GB':'united-kingdom','DE':'germany',
+    'FR':'france','ES':'spain','IT':'italy','AR':'argentina','MX':'mexico',
+    'CL':'chile','CO':'colombia','PE':'peru','UY':'uruguay','PY':'paraguay',
+    'AU':'australia','NZ':'new-zealand','CA':'canada','JP':'japan','KR':'south-korea',
+    'NL':'netherlands','BE':'belgium','PT':'portugal','CH':'switzerland','AT':'austria',
+    'SE':'sweden','NO':'norway','DK':'denmark','FI':'finland','PL':'poland',
+    'ZA':'south-africa','NG':'nigeria','IN':'india','SG':'singapore','HK':'hong-kong',
+    'TW':'taiwan','TH':'thailand','MY':'malaysia','ID':'indonesia','PH':'philippines',
+    'CN':'china','RU':'russia','UA':'ukraine','CZ':'czech-republic','HU':'hungary',
+    'RO':'romania','GR':'greece','TR':'turkey','IL':'israel','AE':'united-arab-emirates',
 }
 
 # ── Viagogo country map ───────────────────────────────────────
@@ -268,6 +283,13 @@ async def save_event(session: aiohttp.ClientSession, ev: Dict, origin_city_id: i
     external_id = (ev.get('event_key') or ev.get('external_id') or
                    f"{source}_{slug((ev.get('name') or ''), '_')[:60]}")[:255]
 
+    # ── Early exit if already saved — skip Nominatim + venue work ──
+    exists = await conn.fetchval(
+        'SELECT 1 FROM fetcher_events WHERE external_id=$1 AND source=$2',
+        external_id, source)
+    if exists:
+        return False
+
     # ── Resolve real city — only if event has distinct coords ──
     real_city_id = origin_city_id
     origin_lat   = ev.get('origin_lat')
@@ -345,6 +367,163 @@ async def save_event(session: aiohttp.ClientSession, ev: Dict, origin_city_id: i
         if 'duplicate' not in str(e).lower():
             log.debug(f"DB insert error: {e}")
         return False
+
+
+async def bulk_save_events(session: aiohttp.ClientSession,
+                           events: List[Dict], origin_city_id: int,
+                           batch_size: int = SAVE_BATCH_SIZE) -> int:
+    """
+    Bulk-save events efficiently:
+      1. One query to pre-filter already-existing IDs.
+      2. Process remaining events in batches of `batch_size`:
+         - Nominatim geocoding (cached, rate-limited)
+         - Venue upsert
+         - executemany INSERT inside a single transaction per batch.
+    """
+    if not events:
+        return 0
+
+    conn = await get_pg()
+
+    def _make_ids(ev):
+        src = (ev.get('source') or 'keepup')[:50]
+        eid = (ev.get('event_key') or ev.get('external_id') or
+               f"{src}_{slug((ev.get('name') or ''), '_')[:60]}")[:255]
+        return src, eid
+
+    tagged   = [(_make_ids(ev), ev) for ev in events]
+    ext_ids  = [eid for (_, eid), _ in tagged]
+    sources  = [src for (src, _), _ in tagged]
+
+    # ── One bulk existence check ────────────────────────────────
+    existing_rows = await conn.fetch("""
+        SELECT e.external_id, e.source
+        FROM   fetcher_events e
+        JOIN   (SELECT unnest($1::text[]) AS eid,
+                       unnest($2::text[]) AS src) AS chk
+               ON chk.eid = e.external_id AND chk.src = e.source
+    """, ext_ids, sources)
+    existing = {(r['source'], r['external_id']) for r in existing_rows}
+
+    to_save = [((src, eid), ev) for (src, eid), ev in tagged
+               if (src, eid) not in existing]
+
+    if not to_save:
+        return 0
+
+    # Enrich only genuinely new events — skip DuckDuckGo for already-saved ones
+    ids_list = [ids for ids, _ in to_save]
+    evs_list = await enrich_descriptions(session, [ev for _, ev in to_save])
+    to_save  = list(zip(ids_list, evs_list))
+
+    total_saved = 0
+    for i in range(0, len(to_save), batch_size):
+        chunk = to_save[i:i + batch_size]
+        rows  = []
+
+        for (source, external_id), ev in chunk:
+            lat = ev.get('latitude') or ev.get('venue_latitude') or ev.get('origin_lat')
+            lon = ev.get('longitude') or ev.get('venue_longitude') or ev.get('origin_lon')
+
+            # ── Resolve real city ───────────────────────────────
+            real_city_id = origin_city_id
+            origin_lat   = ev.get('origin_lat')
+            origin_lon   = ev.get('origin_lon')
+            if (lat and lon and origin_lat and origin_lon and
+                    haversine_km(lat, lon, origin_lat, origin_lon) > 1.0):
+                geo      = await reverse_geocode(session, lat, lon)
+                city_nm  = geo.get('city', '')
+                if city_nm:
+                    real_city_id = await upsert_city(
+                        city_nm, geo.get('country', ''), geo.get('country_code', ''),
+                        lat, lon, 0, 500)
+
+            # ── Venue ───────────────────────────────────────────
+            venue_id   = None
+            venue_name = (ev.get('venue') or ev.get('venue_name') or '')
+            if venue_name and lat and lon:
+                try:
+                    vrow = await conn.fetchrow("""
+                        INSERT INTO fetcher_venues
+                            (external_id, source, name, latitude, longitude, city_id)
+                        VALUES ($1,$2,$3,$4,$5,$6)
+                        ON CONFLICT (external_id, source) DO UPDATE
+                            SET name=EXCLUDED.name, updated_at=NOW()
+                        RETURNING id
+                    """, f"v_{source}_{slug(venue_name[:40], '_')}",
+                         source, venue_name[:500], float(lat), float(lon), real_city_id)
+                    venue_id = vrow['id']
+                except Exception:
+                    pass
+
+            # ── Parse date ──────────────────────────────────────
+            event_date = None
+            raw = ev.get('date') or ev.get('event_date') or ''
+            if raw and raw not in ('TBA', ''):
+                for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%d'):
+                    try:
+                        event_date = datetime.strptime(raw[:19], fmt)
+                        break
+                    except ValueError:
+                        continue
+
+            rows.append((
+                external_id, source,
+                (ev.get('name') or 'Unknown')[:500],
+                (ev.get('description') or '')[:2000],
+                (ev.get('category') or 'Other')[:255],
+                float(lat) if lat else None,
+                float(lon) if lon else None,
+                venue_name[:500] if venue_name else None,
+                real_city_id, venue_id, event_date,
+                (ev.get('url') or '')[:1000],
+                (ev.get('image_url') or '')[:1000],
+                float(ev['price_min']) if ev.get('price_min') else None,
+                float(ev['price_max']) if ev.get('price_max') else None,
+                ev.get('currency'),
+            ))
+
+        if not rows:
+            continue
+
+        try:
+            async with conn.transaction():
+                await conn.executemany("""
+                    INSERT INTO fetcher_events
+                        (external_id, source, name, description, category,
+                         latitude, longitude, venue_name, city_id, venue_id,
+                         start_date, url, image_url, price_min, price_max, currency)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                    ON CONFLICT (external_id, source) DO UPDATE
+                        SET name=EXCLUDED.name,
+                            start_date=COALESCE(EXCLUDED.start_date, fetcher_events.start_date),
+                            image_url=COALESCE(NULLIF(EXCLUDED.image_url,''), fetcher_events.image_url),
+                            updated_at=NOW()
+                """, rows)
+            total_saved += len(rows)
+            log.info(f"    💾 Batch {i // batch_size + 1}: {len(rows)} events saved")
+        except Exception as e:
+            log.warning(f"  Bulk insert error (batch {i // batch_size + 1}): {e}")
+            # Fallback: individual inserts
+            for row in rows:
+                try:
+                    await conn.execute("""
+                        INSERT INTO fetcher_events
+                            (external_id, source, name, description, category,
+                             latitude, longitude, venue_name, city_id, venue_id,
+                             start_date, url, image_url, price_min, price_max, currency)
+                        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                        ON CONFLICT (external_id, source) DO UPDATE
+                            SET name=EXCLUDED.name,
+                                start_date=COALESCE(EXCLUDED.start_date, fetcher_events.start_date),
+                                image_url=COALESCE(NULLIF(EXCLUDED.image_url,''), fetcher_events.image_url),
+                                updated_at=NOW()
+                    """, *row)
+                    total_saved += 1
+                except Exception:
+                    pass
+
+    return total_saved
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -549,11 +728,13 @@ async def fetch_sympla_scraper(session: aiohttp.ClientSession,
 
 
 async def fetch_bandsintown(session: aiohttp.ClientSession,
-                            city_name: str, country: str,
+                            city_name: str, country: str, country_code: str,
                             lat: float, lon: float) -> List[Dict]:
     """
-    Renders Bandsintown city page via Playwright and extracts MusicEvent JSON-LD.
-    Validates that each event's venue is actually in or near the target city.
+    Renders Bandsintown city page via Playwright, reads all events from
+    window.__data.initialState.upcomingEvents, then paginates via the
+    in-browser fetch API (needed to pass Cloudflare). Max 10 pages (≈360 events).
+    Uses BIT_COUNTRY map to build the correct English slug (e.g. BR→brazil).
     Falls back gracefully if Playwright is not installed.
     """
     try:
@@ -562,79 +743,79 @@ async def fetch_bandsintown(session: aiohttp.ClientSession,
         log.warning("  Bandsintown: playwright not installed")
         return []
 
-    def _city_slug(c, co):
-        return f'{slug(c)}-{slug(co)}'
+    en_country = BIT_COUNTRY.get(country_code.upper(), slug(country))
+    city_slug  = f'{slug(city_name)}-{en_country}'
+    url        = f'https://www.bandsintown.com/c/{city_slug}'
 
-    city_slug = _city_slug(city_name, country)
-    url = f'https://www.bandsintown.com/c/{city_slug}'
+    def _map_event(ev: dict) -> Optional[Dict]:
+        ev_url = ev.get('eventUrl') or ev.get('callToActionRedirectUrl') or ''
+        m      = re.search(r'/e/(\d+)', ev_url)
+        key    = f"bit_{m.group(1) if m else abs(hash(ev_url))}"
+        name   = (ev.get('title') or ev.get('artistName') or '')[:200]
+        artist = (ev.get('artistName') or name)[:200]
+        return {
+            'name':        name,
+            'artist':      artist,
+            'date':        (ev.get('startsAt') or '')[:19],
+            'venue':       (ev.get('venueName') or '')[:200],
+            'category':    'Concert',
+            'description': '',
+            'url':         ev_url,
+            'image_url':   ev.get('properlySizedImageURL') or ev.get('artistImageSrc') or '',
+            'latitude':    lat,
+            'longitude':   lon,
+            'source':      'bandsintown',
+            'event_key':   key,
+        }
 
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             context = await browser.new_context(user_agent=UA, locale='en-US')
-            page    = await context.new_page()
-            await page.goto(url, wait_until='domcontentloaded', timeout=30000)
-            await page.wait_for_timeout(5000)
-            html = await page.content()
+            pw_page = await context.new_page()
+            await pw_page.goto(url, wait_until='domcontentloaded', timeout=30000)
+            await pw_page.wait_for_timeout(4000)
+
+            # ── Page 1: read from window.__data ──────────────────────
+            data = await pw_page.evaluate('() => window.__data')
+            ue   = (data or {}).get('initialState', {}).get('upcomingEvents', {})
+            raw_events  = list(ue.get('events') or [])
+            next_url    = ue.get('urlForNextPageOfEvents') or ''
+
+            # ── Pages 2–10: paginate via in-browser fetch ─────────────
+            MAX_PAGES = 10
+            page_num  = 2
+            while next_url and page_num <= MAX_PAGES:
+                try:
+                    page_data = await pw_page.evaluate(f'''async () => {{
+                        const r = await fetch({json.dumps(next_url)},
+                            {{credentials: "include", headers: {{"Accept": "application/json"}}}});
+                        return r.ok ? await r.json() : null;
+                    }}''')
+                    if not page_data:
+                        break
+                    batch = page_data.get('events') or []
+                    if not batch:
+                        break
+                    raw_events.extend(batch)
+                    next_url = page_data.get('urlForNextPageOfEvents') or ''
+                    page_num += 1
+                    await asyncio.sleep(0.5)
+                except Exception:
+                    break
+
             await browser.close()
 
-        ld_blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
-        events = []
-        seen: Set[str] = set()
-        city_lower = city_name.lower()
+        # ── Map to our schema ─────────────────────────────────────────
+        seen:   Set[str]   = set()
+        events: List[Dict] = []
+        for ev in raw_events:
+            mapped = _map_event(ev)
+            if mapped and mapped['event_key'] not in seen and mapped['name']:
+                seen.add(mapped['event_key'])
+                events.append(mapped)
 
-        for block in ld_blocks:
-            try:
-                data  = json.loads(block)
-                items = data if isinstance(data, list) else [data]
-                for item in items:
-                    if item.get('@type') != 'MusicEvent':
-                        continue
-
-                    ev_url = item.get('url', '')
-                    ev_id  = re.search(r'/e/(\d+)', ev_url)
-                    key    = f"bit_{ev_id.group(1) if ev_id else abs(hash(ev_url))}"
-                    if key in seen:
-                        continue
-                    seen.add(key)
-
-                    loc    = item.get('location', {})
-                    geo    = loc.get('geo', {})
-                    v_lat  = float(geo['latitude'])  if geo.get('latitude')  else lat
-                    v_lon  = float(geo['longitude']) if geo.get('longitude') else lon
-
-                    # Validate: skip if venue is suspiciously far (>500km) AND
-                    # venue name/location doesn't mention our city
-                    # This catches the "36 featured events" problem
-                    venue_location = str(item).lower()
-                    dist = haversine_km(lat, lon, v_lat, v_lon)
-                    if dist > 500 and city_lower not in venue_location:
-                        continue
-
-                    name   = item.get('name', '')
-                    artist = (item.get('performer') or {}).get('name', '') or name
-                    if ' @ ' in name:
-                        artist = name.split(' @ ')[0].strip()
-                        name   = artist
-
-                    events.append({
-                        'name':        name[:200],
-                        'artist':      artist[:200],
-                        'date':        (item.get('startDate') or '')[:19],
-                        'venue':       loc.get('name', '')[:200],
-                        'category':    'Concert',
-                        'description': (item.get('description') or '')[:300],
-                        'url':         ev_url,
-                        'image_url':   item.get('image', ''),
-                        'latitude':    v_lat,
-                        'longitude':   v_lon,
-                        'source':      'bandsintown',
-                        'event_key':   key,
-                    })
-            except (json.JSONDecodeError, TypeError, KeyError):
-                continue
-
-        log.info(f"  Bandsintown: {len(events)} events for {city_name}")
+        log.info(f"  Bandsintown: {len(events)} events for {city_name} ({page_num - 1} pages)")
         return events
     except Exception as e:
         log.warning(f"  Bandsintown error ({city_name}): {e}")
@@ -808,7 +989,7 @@ async def _eventbrite_jsonld(session: aiohttp.ClientSession,
                 items = data if isinstance(data, list) else [data]
                 for w in list(items):
                     if w.get('@type') == 'ItemList':
-                        items = [i.get('item', i) for i in w.get('mainEntity', [])]
+                        items = [i.get('item', i) for i in w.get('itemListElement', w.get('mainEntity', []))]
                         break
                 for item in items:
                     if item.get('@type') not in ('Event', 'MusicEvent'):
@@ -964,7 +1145,7 @@ async def sweep_ring(session: aiohttp.ClientSession,
 
     if 'ticketmaster'   in sources: coros.append(fetch_ticketmaster(session, lat, lon, int(radius_km)))
     if 'sympla_scraper' in sources: coros.append(fetch_sympla_scraper(session, city_name, country_code, lat, lon))
-    if 'bandsintown'    in sources: coros.append(fetch_bandsintown(session, city_name, country, lat, lon))
+    if 'bandsintown'    in sources: coros.append(fetch_bandsintown(session, city_name, country, country_code, lat, lon))
     if 'viagogo_scraper'in sources: coros.append(fetch_viagogo_scraper(session, city_name, country_code, lat, lon))
     if 'eventbrite'     in sources: coros.append(fetch_eventbrite(session, city_name, country, lat, lon))
     if 'ai'             in sources: coros.append(fetch_ai(session, city_name, country, lat, lon))
@@ -972,16 +1153,12 @@ async def sweep_ring(session: aiohttp.ClientSession,
     results    = await asyncio.gather(*coros, return_exceptions=True)
     all_events = [e for r in results if isinstance(r, list) for e in r]
 
-    # Enrich empty descriptions via DuckDuckGo
-    all_events = await enrich_descriptions(session, all_events)
-
     unique = dedup(all_events)
-    saved  = 0
     for ev in unique:
         ev['origin_lat'] = lat
         ev['origin_lon'] = lon
-        if await save_event(session, ev, origin_city_id):
-            saved += 1
+
+    saved = await bulk_save_events(session, unique, origin_city_id)
 
     log.info(f"  ✅ Ring {radius_km:.0f}km: {len(all_events)} found → {len(unique)} unique → {saved} saved")
     return saved
@@ -1057,7 +1234,7 @@ async def run_forever(sources=None, step_km=DEFAULT_STEP_KM):
             log.info(f"\n🔄 Cycle #{cycle} — launching {len(CONTINENT_CITIES)} continents in parallel")
             tasks = [
                 asyncio.create_task(
-                    run_fetcher(city_name=city, step_km=step_km, max_km=10_000, sources=sources)
+                    run_fetcher(city_name=city, step_km=step_km, max_km=DEFAULT_MAX_KM, sources=sources)
                 )
                 for city, country, cc in CONTINENT_CITIES
             ]
